@@ -1,39 +1,37 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f3f4f6;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
+function updateTime() {
+    const now = new Date();
+    document.getElementById('current-time').textContent = now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+
+function fetchPrayerTimes(latitude, longitude) {
+    fetch(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=4`)
+        .then(response => response.json())
+        .then(data => {
+            const timings = data.data.timings;
+            document.getElementById('fajr-time').textContent = timings.Fajr;
+            document.getElementById('dhuhr-time').textContent = timings.Dhuhr;
+            document.getElementById('asr-time').textContent = timings.Asr;
+            document.getElementById('maghrib-time').textContent = timings.Maghrib;
+            document.getElementById('isha-time').textContent = timings.Isha;
+        })
+        .catch(error => {
+            document.getElementById('maghrib-time').textContent = 'Gagal mengambil waktu sholat';
+        });
 }
 
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 350px;
-    text-align: center;
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const { latitude, longitude } = position.coords;
+            document.getElementById('location').textContent = `Lat: ${latitude}, Long: ${longitude}`;
+            fetchPrayerTimes(latitude, longitude);
+        }, error => {
+            document.getElementById('location').textContent = 'Akses lokasi ditolak.';
+        });
+    } else {
+        document.getElementById('location').textContent = 'Peramban tidak mendukung geolokasi.';
+    }
 }
 
-h1 {
-    font-size: 24px;
-    margin-bottom: 20px;
-}
-
-p {
-    font-size: 18px;
-    margin: 10px 0;
-}
-
-.time-icon {
-    margin-right: 10px;
-    vertical-align: middle;
-}
-
-.time-container p {
-    display: flex;
-    align-items: center;
-    justify-content: start;
-}
+getLocation();
