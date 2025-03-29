@@ -1,72 +1,39 @@
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f0f0f0;
-  margin: 0;
-  padding: 20px;
-  transition: background-color 0.3s, color 0.3s;
+    font-family: Arial, sans-serif;
+    background-color: #f3f4f6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
 }
 
-body.dark {
-  background-color: #181818;
-  color: white;
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 350px;
+    text-align: center;
 }
 
-#scanButton, #clearButton {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  margin-right: 10px;
+h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
 }
 
-#scanButton:hover, #clearButton:hover {
-  background-color: #0056b3;
+p {
+    font-size: 18px;
+    margin: 10px 0;
 }
 
-#devicesList {
-  margin-top: 20px;
-  padding: 0;
-  list-style-type: none;
+.time-icon {
+    margin-right: 10px;
+    vertical-align: middle;
 }
 
-li {
-  background: white;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 5px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: transform 0.2s;
-}
-
-li:hover {
-  transform: scale(1.02);
-}
-
-li.dark {
-  background: #333;
-}
-
-li button {
-  background-color: red;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-li button:hover {
-  background-color: darkred;
-}
-
-#loading {
-  margin-top: 20px;
-  font-size: 1.2em;
-  color: orange;
+.time-container p {
+    display: flex;
+    align-items: center;
+    justify-content: start;
 }
