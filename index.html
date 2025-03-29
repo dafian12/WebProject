@@ -1,27 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bluetooth Scanner</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prayer Time App</title>
+    <link href="./style.css" rel="stylesheet">
 </head>
 <body>
-  <h1>Bluetooth Scanner</h1>
-  <div>
-    <button id="scanButton">Scan for Bluetooth Devices</button>
-    <button id="clearButton">Clear List</button>
-    <label>
-      <input type="checkbox" id="autoRefresh" /> Auto-Refresh
-    </label>
-    <label>
-      <input type="checkbox" id="darkMode" /> Dark Mode
-    </label>
-    <input type="text" id="searchBox" placeholder="Cari perangkat..." />
-  </div>
-  <div id="loading" style="display: none;">Scanning...</div>
-  <ul id="devicesList"></ul>
-  
-  <script src="app.js"></script>
+    <div class="container">
+        <h1>Prayer Time App</h1>
+        <div>
+            <p>Current Time: <span id="current-time">Loading...</span></p>
+        </div>
+        <div>
+            <p>Your Location: <span id="location">Fetching...</span></p>
+        </div>
+        <div class="time-container">
+            <p><img src="https://img.icons8.com/emoji/48/000000/sunrise-over-mountains.png" class="time-icon"/>Fajr Time: <span id="fajr-time">Fetching...</span></p>
+            <p><img src="https://img.icons8.com/emoji/48/000000/sun.png" class="time-icon"/>Dhuhr Time: <span id="dhuhr-time">Fetching...</span></p>
+            <p><img src="https://img.icons8.com/emoji/48/000000/sunset.png" class="time-icon"/>Asr Time: <span id="asr-time">Fetching...</span></p>
+            <p><img src="https://img.icons8.com/emoji/48/000000/crescent-moon.png" class="time-icon"/>Maghrib Time: <span id="maghrib-time">Fetching...</span></p>
+            <p><img src="https://img.icons8.com/emoji/48/000000/full-moon.png" class="time-icon"/>Isha Time: <span id="isha-time">Fetching...</span></p>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
 </body>
 </html>
