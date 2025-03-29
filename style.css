@@ -1,42 +1,72 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f4f8;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 20px;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    width: 300px;
+body.dark {
+  background-color: #181818;
+  color: white;
 }
 
-button {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 20px;
-    transition: background-color 0.3s;
+#scanButton, #clearButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-right: 10px;
 }
 
-button:hover {
-    background-color: #0056b3;
+#scanButton:hover, #clearButton:hover {
+  background-color: #0056b3;
 }
 
-.network-options {
-    margin-bottom: 20px;
+#devicesList {
+  margin-top: 20px;
+  padding: 0;
+  list-style-type: none;
 }
 
-#result {
-    margin-top: 20px;
-    font-size: 18px;
+li {
+  background: white;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s;
+}
+
+li:hover {
+  transform: scale(1.02);
+}
+
+li.dark {
+  background: #333;
+}
+
+li button {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+li button:hover {
+  background-color: darkred;
+}
+
+#loading {
+  margin-top: 20px;
+  font-size: 1.2em;
+  color: orange;
 }
