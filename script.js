@@ -12,9 +12,9 @@ predictions.forEach(prediction => {
     const [x, y, width, height] = prediction.bbox;
     const centerX = x + width / 2;
     const centerY = y + height / 2;
-    const radius = Math.max(width, height) / 2;
+    const radius = Math.min(width, height) / 4; // Lebih kecil dari sebelumnya
 
-    // Draw circle
+    // Draw smaller circle
     context.beginPath();
     context.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     context.strokeStyle = 'red';
