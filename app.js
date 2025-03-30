@@ -1,56 +1,60 @@
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const logs = document.getElementById('logs');
+const serverAddressInput = document.getElementById("serverAddress");
+const serverPortInput = document.getElementById("serverPort");
+const startButton = document.getElementById("startButton");
+const stopButton = document.getElementById("stopButton");
+const logArea = document.getElementById("logArea");
+
 let socket;
 
-function logMessage(message) {
-    const logEntry = document.createElement('div');
-    logEntry.textContent = message;
-    logs.appendChild(logEntry);
-    logs.scrollTop = logs.scrollHeight;
+function addLog(message) {
+    logArea.value += message + "\n";
+    logArea.scrollTop = logArea.scrollHeight;
 }
 
-startBtn.addEventListener('click', () => {
-    const address = document.getElementById('serverAddress').value;
-    const port = document.getElementById('serverPort').value;
+startButton.addEventListener("click", () => {
+    const serverAddress = serverAddressInput.value.trim();
+    const serverPort = serverPortInput.value.trim();
 
-    if (!address || !port) {
-        logMessage('Please enter a valid server address and port.');
+    if (!serverAddress || !serverPort) {
+        alert("Mohon isi alamat server dan port.");
         return;
     }
 
-    logMessage(`Connecting to WebSocket...`);
+    if (socket) {
+        socket.close();
+    }
 
-    socket = new WebSocket(`ws://localhost:8000/ws`);
+    socket = new WebSocket("ws://localhost:8000/ws");
 
     socket.onopen = () => {
-        logMessage('Connected to WebSocket server.');
+        addLog("Terhubung ke server backend.");
         socket.send(JSON.stringify({
-            action: 'start',
-            address: address,
-            port: port
+            action: "start",
+            address: serverAddress,
+            port: serverPort
         }));
     };
 
     socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.log) {
-            logMessage(data.log);
+            addLog(data.log);
         }
     };
 
-    socket.onerror = (error) => {
-        logMessage(`WebSocket error: ${error.message}`);
+    socket.onclose = () => {
+        addLog("Koneksi terputus dari server backend.");
     };
 
-    socket.onclose = () => {
-        logMessage('WebSocket connection closed.');
+    socket.onerror = (error) => {
+        addLog("Terjadi kesalahan: " + error.message);
     };
 });
 
-stopBtn.addEventListener('click', () => {
+stopButton.addEventListener("click", () => {
     if (socket) {
-        socket.send(JSON.stringify({ action: 'stop' }));
+        socket.send(JSON.stringify({ action: "stop" }));
         socket.close();
+        addLog("Serangan dihentikan.");
     }
 });
