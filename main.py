@@ -1,13 +1,7 @@
 import asyncio
 import websockets
 import json
-import logging
 import random
-import time
-from mcstatus import MinecraftServer
-from multiprocessing import Process, cpu_count
-
-logging.basicConfig(filename='server_status.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 connected_clients = set()
 running_processes = {}
@@ -16,22 +10,11 @@ async def send_log(websocket, message):
     if websocket in connected_clients:
         await websocket.send(json.dumps({"log": message}))
 
-async def handle_attack(server_address, server_port, websocket):
-    try:
-        server = MinecraftServer.lookup(f"{server_address}:{server_port}")
-        status = await server.status()
-        message = f"Server is online with {status.players.online} players. Ping: {status.latency} ms"
-        logging.info(message)
-        await send_log(websocket, message)
-    except Exception as e:
-        message = f"Error connecting to server: {str(e)}"
-        logging.error(message)
-        await send_log(websocket, message)
-
 async def attack_loop(server_address, server_port, websocket, process_id):
     while websocket in connected_clients:
-        await handle_attack(server_address, server_port, websocket)
-        await asyncio.sleep(random.uniform(1, 3))
+        message = f"Menyerang {server_address}:{server_port} dari proses {process_id}"
+        await send_log(websocket, message)
+        await asyncio.sleep(random.uniform(0.5, 1.5))
 
 async def handler(websocket, path):
     global running_processes
