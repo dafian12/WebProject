@@ -1,11 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Roblox-Like Game</title>
+    <title>Game Adu Pedang 1 vs 1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="gameMenu">
+        <h1>Game Adu Pedang 1 vs 1</h1>
+        <button onclick="startGame()">Mulai Permainan</button>
+        <select id="weaponSelect">
+            <option value="sword">Pedang Biasa</option>
+            <option value="katana">Katana</option>
+            <option value="axe">Kapak</option>
+        </select>
+        <select id="difficultySelect">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="main.js"></script>
 </body>
