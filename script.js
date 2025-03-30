@@ -2,46 +2,44 @@ const video = document.getElementById('video'); const canvas = document.getEleme
 
 async function setupCamera() { try { const stream = await navigator.mediaDevices.getUserMedia({ video: true }); video.srcObject = stream; return new Promise(resolve => { video.onloadedmetadata = () => { resolve(video); }; }); } catch (error) { alert('Error accessing camera: ' + error.message); console.error('Error accessing camera:', error); } }
 
-async function detectObjects(model) { if (!video.srcObject) return;
+async function detectPose(model) { if (!video.srcObject) return;
 
 context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-const predictions = await model.detect(video);
+const poses = await model.estimatePoses(video, {
+    flipHorizontal: false
+});
 
-predictions.forEach(prediction => {
-    const [x, y, width, height] = prediction.bbox;
+poses.forEach(pose => {
+    pose.keypoints.forEach(keypoint => {
+        if (keypoint.score > 0.5) {
+            context.beginPath();
+            context.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
+            context.fillStyle = 'lime';
+            context.fill();
+        }
+    });
 
-    // Draw skeleton-like tracking
-    const points = [
-        [x, y],
-        [x + width, y],
-        [x + width, y + height],
-        [x, y + height],
-        [x, y]
+    const skeleton = [
+        [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+        [5, 11], [6, 12], [11, 12], [11, 13], [13, 15],
+        [12, 14], [14, 16]
     ];
 
     context.strokeStyle = 'lime';
     context.lineWidth = 2;
-    context.beginPath();
 
-    points.forEach(([px, py], index) => {
-        if (index === 0) {
-            context.moveTo(px, py);
-        } else {
-            context.lineTo(px, py);
+    skeleton.forEach(([i, j]) => {
+        const kp1 = pose.keypoints[i];
+        const kp2 = pose.keypoints[j];
+
+        if (kp1.score > 0.5 && kp2.score > 0.5) {
+            context.beginPath();
+            context.moveTo(kp1.x, kp1.y);
+            context.lineTo(kp2.x, kp2.y);
+            context.stroke();
         }
     });
-
-    context.stroke();
-
-    // Draw label
-    context.font = '18px Arial';
-    context.fillStyle = 'lime';
-    context.fillText(
-        `${prediction.class} (${(prediction.score * 100).toFixed(1)}%)`,
-        x,
-        y > 10 ? y - 5 : 10
-    );
 });
 
 }
@@ -50,10 +48,10 @@ async function main() { await setupCamera(); if (!video.srcObject) return;
 
 video.play();
 
-const model = await cocoSsd.load();
-console.log('Model loaded.');
+const model = await tf.loadGraphModel('https://tfhub.dev/google/tfjs-model/movenet/singlepose/lightning/4', { fromTFHub: true });
+console.log('PoseNet Model loaded.');
 
-setInterval(() => detectObjects(model), 100);
+setInterval(() => detectPose(model), 100);
 
 }
 
