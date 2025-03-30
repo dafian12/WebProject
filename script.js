@@ -3,16 +3,14 @@ const canvasElement = document.getElementById('output');
 const canvasCtx = canvasElement.getContext('2d');
 const statusDiv = document.getElementById('status');
 
-let lastX, lastY;
+let lastX = null, lastY = null;
 let isDrawing = false;
 
 async function setupCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         videoElement.srcObject = stream;
-        await new Promise(resolve => {
-            videoElement.onloadedmetadata = () => resolve();
-        });
+        await new Promise(resolve => videoElement.onloadedmetadata = resolve);
         videoElement.play();
         statusDiv.textContent = "Kamera berhasil terhubung, mendeteksi tangan...";
     } catch (error) {
@@ -46,14 +44,18 @@ hands.onResults(results => {
 
         statusDiv.textContent = "Tangan terdeteksi! Menggambar...";
 
-        if (isDrawing && lastX != null && lastY != null) {
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lastX, lastY);
-            canvasCtx.lineTo(x, y);
-            canvasCtx.strokeStyle = '#32cd32';
-            canvasCtx.lineWidth = 3;
-            canvasCtx.stroke();
+        if (lastX === null || lastY === null) {
+            lastX = x;
+            lastY = y;
+            return; // Skip menggambar garis pertama kali
         }
+
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(lastX, lastY);
+        canvasCtx.lineTo(x, y);
+        canvasCtx.strokeStyle = '#32cd32';
+        canvasCtx.lineWidth = 3;
+        canvasCtx.stroke();
 
         lastX = x;
         lastY = y;
@@ -68,7 +70,12 @@ hands.onResults(results => {
 
 const camera = new Camera(videoElement, {
     onFrame: async () => {
-        await hands.send({image: videoElement});
+        try {
+            await hands.send({image: videoElement});
+        } catch (error) {
+            console.error("Gagal mengirim frame ke MediaPipe:", error);
+            statusDiv.textContent = "Error: " + error.message;
+        }
     },
     width: 640,
     height: 480
