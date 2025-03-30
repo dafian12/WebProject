@@ -1,37 +1,74 @@
-function updateTime() {
-    const now = new Date();
-    document.getElementById('current-time').textContent = now.toLocaleTimeString();
-}
-setInterval(updateTime, 1000);
-
-function fetchPrayerTimes(latitude, longitude) {
-    fetch(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=4`)
-        .then(response => response.json())
-        .then(data => {
-            const timings = data.data.timings;
-            document.getElementById('fajr-time').textContent = timings.Fajr;
-            document.getElementById('dhuhr-time').textContent = timings.Dhuhr;
-            document.getElementById('asr-time').textContent = timings.Asr;
-            document.getElementById('maghrib-time').textContent = timings.Maghrib;
-            document.getElementById('isha-time').textContent = timings.Isha;
-        })
-        .catch(error => {
-            document.getElementById('maghrib-time').textContent = 'Gagal mengambil waktu sholat';
-        });
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
 }
 
-function getLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-            const { latitude, longitude } = position.coords;
-            document.getElementById('location').textContent = `Lat: ${latitude}, Long: ${longitude}`;
-            fetchPrayerTimes(latitude, longitude);
-        }, error => {
-            document.getElementById('location').textContent = 'Akses lokasi ditolak.';
-        });
-    } else {
-        document.getElementById('location').textContent = 'Peramban tidak mendukung geolokasi.';
-    }
+.chat-container {
+    width: 400px;
+    margin: 40px auto;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-getLocation();
+.chat-header {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.chat-header h2 {
+    margin: 0;
+}
+
+.chat-body {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.chat-body .chat-message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.chat-body .chat-message:last-child {
+    border-bottom: none;
+}
+
+.chat-body .chat-message .username {
+    font-weight: bold;
+    color: #00698f;
+}
+
+.chat-body .chat-message .message-text {
+    color: #666;
+}
+
+.chat-footer {
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+#chat-input {
+    width: 70%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#send-btn {
+    width: 20%;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#send-btn:hover {
+    background-color: #3e8e41;
+}
