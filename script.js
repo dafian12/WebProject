@@ -2,6 +2,9 @@ const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('output');
 const canvasCtx = canvasElement.getContext('2d');
 
+let lastX, lastY;
+let isDrawing = false;
+
 async function setupCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     videoElement.srcObject = stream;
@@ -18,7 +21,7 @@ const hands = new Hands({
 });
 
 hands.setOptions({
-    maxNumHands: 2,
+    maxNumHands: 1,
     modelComplexity: 1,
     minDetectionConfidence: 0.7,
     minTrackingConfidence: 0.7
@@ -28,15 +31,30 @@ hands.onResults(results => {
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     canvasCtx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
-    if (results.multiHandLandmarks) {
-        for (const landmarks of results.multiHandLandmarks) {
-            for (const point of landmarks) {
-                canvasCtx.beginPath();
-                canvasCtx.arc(point.x * canvasElement.width, point.y * canvasElement.height, 5, 0, 2 * Math.PI);
-                canvasCtx.fillStyle = '#32cd32';
-                canvasCtx.fill();
-            }
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        
+        // Titik indeks jari telunjuk (landmark ke-8)
+        const indexFinger = landmarks[8];
+        const x = indexFinger.x * canvasElement.width;
+        const y = indexFinger.y * canvasElement.height;
+
+        if (isDrawing && lastX != null && lastY != null) {
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(lastX, lastY);
+            canvasCtx.lineTo(x, y);
+            canvasCtx.strokeStyle = '#32cd32';
+            canvasCtx.lineWidth = 3;
+            canvasCtx.stroke();
         }
+
+        lastX = x;
+        lastY = y;
+        isDrawing = true;
+    } else {
+        isDrawing = false;
+        lastX = null;
+        lastY = null;
     }
 });
 
