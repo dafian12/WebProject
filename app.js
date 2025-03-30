@@ -1,7 +1,7 @@
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const logs = document.getElementById('logs');
-let interval;
+let socket;
 
 function logMessage(message) {
     const logEntry = document.createElement('div');
@@ -19,14 +19,38 @@ startBtn.addEventListener('click', () => {
         return;
     }
 
-    logMessage(`Starting stress test on ${address}:${port}...`);
+    logMessage(`Connecting to WebSocket...`);
 
-    interval = setInterval(() => {
-        logMessage(`Sending request to ${address}:${port}`);
-    }, 1000);
+    socket = new WebSocket(`ws://localhost:8000/ws`);
+
+    socket.onopen = () => {
+        logMessage('Connected to WebSocket server.');
+        socket.send(JSON.stringify({
+            action: 'start',
+            address: address,
+            port: port
+        }));
+    };
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.log) {
+            logMessage(data.log);
+        }
+    };
+
+    socket.onerror = (error) => {
+        logMessage(`WebSocket error: ${error.message}`);
+    };
+
+    socket.onclose = () => {
+        logMessage('WebSocket connection closed.');
+    };
 });
 
 stopBtn.addEventListener('click', () => {
-    clearInterval(interval);
-    logMessage('Stress test stopped.');
+    if (socket) {
+        socket.send(JSON.stringify({ action: 'stop' }));
+        socket.close();
+    }
 });
