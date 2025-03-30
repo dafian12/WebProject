@@ -10,20 +10,33 @@ const predictions = await model.detect(video);
 
 predictions.forEach(prediction => {
     const [x, y, width, height] = prediction.bbox;
-    const centerX = x + width / 2;
-    const centerY = y + height / 2;
-    const radius = Math.min(width, height) / 4; // Lebih kecil dari sebelumnya
 
-    // Draw smaller circle
-    context.beginPath();
-    context.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    context.strokeStyle = 'red';
+    // Draw skeleton-like tracking
+    const points = [
+        [x, y],
+        [x + width, y],
+        [x + width, y + height],
+        [x, y + height],
+        [x, y]
+    ];
+
+    context.strokeStyle = 'lime';
     context.lineWidth = 2;
+    context.beginPath();
+
+    points.forEach(([px, py], index) => {
+        if (index === 0) {
+            context.moveTo(px, py);
+        } else {
+            context.lineTo(px, py);
+        }
+    });
+
     context.stroke();
 
     // Draw label
     context.font = '18px Arial';
-    context.fillStyle = 'red';
+    context.fillStyle = 'lime';
     context.fillText(
         `${prediction.class} (${(prediction.score * 100).toFixed(1)}%)`,
         x,
