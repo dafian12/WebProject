@@ -1,81 +1,81 @@
 body {
-    background-color: #1a202c;
-    color: white;
-    font-family: Arial, sans-serif;
-    margin: 0;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-}
-
-.container {
-    width: 90%;
-    max-width: 800px;
+    padding: 20px;
+    margin: 0;
+    font-family: Arial, sans-serif;
 }
 
 .card {
-    background-color: #2d3748;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.input-group {
-    margin-bottom: 10px;
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.input-group input {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 30px;
+    border: 2px solid #ffffff44;
     width: 100%;
-    padding: 8px;
-    border-radius: 5px;
-    border: none;
-    background-color: #4a5568;
-    color: white;
+    max-width: 700px;
 }
 
-.buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
+h1 {
+    color: #00ff99;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    text-align: center;
 }
 
-.buttons button {
-    padding: 10px 20px;
+.input-field {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    transition: border-color 0.3s;
+}
+
+.input-field:focus {
+    border-color: #00ff99;
+    outline: none;
+}
+
+.start-button, .stop-button {
+    width: 48%;
+    padding: 10px;
+    border-radius: 10px;
     border: none;
-    border-radius: 5px;
     cursor: pointer;
+    transition: background-color 0.3s;
     font-weight: bold;
 }
 
-#startBtn {
-    background-color: #48bb78;
+.start-button {
+    background-color: #00ff99;
     color: white;
 }
 
-#startBtn:hover {
-    background-color: #38a169;
+.start-button:hover {
+    background-color: #00cc7a;
 }
 
-#stopBtn {
-    background-color: #e53e3e;
+.stop-button {
+    background-color: #ff4d4d;
     color: white;
 }
 
-#stopBtn:hover {
-    background-color: #c53030;
+.stop-button:hover {
+    background-color: #cc0000;
 }
 
-.logs {
-    margin-top: 20px;
-    background-color: #4a5568;
+.log-area {
+    width: 100%;
     padding: 10px;
-    border-radius: 5px;
-    height: 300px;
-    overflow-y: scroll;
+    height: 250px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    background-color: #1a1a2e;
+    color: white;
+    resize: none;
+    margin-top: 10px;
 }
