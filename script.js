@@ -21,6 +21,7 @@ poses.forEach(pose => {
         [5, 11], [6, 12], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16]
     ];
 
+    context.clearRect(0, 0, canvas.width, canvas.height);  // Clear previous frame
     context.strokeStyle = 'lime';
     context.lineWidth = 2;
 
