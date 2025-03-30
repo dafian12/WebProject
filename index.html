@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Object Detection App</title>
-    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-    <script defer src="./script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 </head>
 <body>
     <h1>Object Detection App</h1>
-    <video id="video" width="640" height="480" autoplay muted></video>
+    <select id="cameraSelect"></select>
+    <video id="video" width="640" height="480" autoplay playsinline style="display:none;"></video>
     <canvas id="canvas" width="640" height="480"></canvas>
+    <script src="main.js"></script>
 </body>
 </html>
