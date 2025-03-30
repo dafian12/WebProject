@@ -10,9 +10,18 @@ const predictions = await model.detect(video);
 
 predictions.forEach(prediction => {
     const [x, y, width, height] = prediction.bbox;
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    const radius = Math.max(width, height) / 2;
+
+    // Draw circle
+    context.beginPath();
+    context.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     context.strokeStyle = 'red';
     context.lineWidth = 2;
-    context.strokeRect(x, y, width, height);
+    context.stroke();
+
+    // Draw label
     context.font = '18px Arial';
     context.fillStyle = 'red';
     context.fillText(
