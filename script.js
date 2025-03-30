@@ -11,23 +11,26 @@ const poses = await model.estimatePoses(video, {
 });
 
 poses.forEach(pose => {
-    const skeleton = [
-        [0, 1], [1, 2], [2, 3], [3, 4],       // Thumb
-        [0, 5], [5, 6], [6, 7], [7, 8],       // Index Finger
-        [0, 9], [9, 10], [10, 11], [11, 12],  // Middle Finger
-        [0, 13], [13, 14], [14, 15], [15, 16],// Ring Finger
-        [0, 17], [17, 18], [18, 19], [19, 20],// Pinky Finger
-        [5, 6], [6, 8], [9, 10], [10, 12], [13, 14], [14, 16], [17, 18], [18, 20],
-        [5, 11], [6, 12], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16]
+    const keypoints = pose.keypoints;
+    const connections = [
+        [0, 1], [1, 2], [2, 3], [3, 4],
+        [0, 5], [5, 6], [6, 7], [7, 8],
+        [0, 9], [9, 10], [10, 11], [11, 12],
+        [0, 13], [13, 14], [14, 15], [15, 16],
+        [0, 17], [17, 18], [18, 19], [19, 20],
+        [5, 6], [6, 8], [9, 10], [10, 12],
+        [13, 14], [14, 16], [17, 18], [18, 20],
+        [5, 11], [6, 12], [11, 12], [11, 13],
+        [13, 15], [12, 14], [14, 16]
     ];
 
-    context.clearRect(0, 0, canvas.width, canvas.height);  // Clear previous frame
+    context.clearRect(0, 0, canvas.width, canvas.height);  // Bersihkan frame sebelumnya
     context.strokeStyle = 'lime';
     context.lineWidth = 2;
 
-    skeleton.forEach(([i, j]) => {
-        const kp1 = pose.keypoints[i];
-        const kp2 = pose.keypoints[j];
+    connections.forEach(([i, j]) => {
+        const kp1 = keypoints[i];
+        const kp2 = keypoints[j];
 
         if (kp1 && kp2 && kp1.score > 0.5 && kp2.score > 0.5) {
             context.beginPath();
@@ -44,8 +47,8 @@ async function main() { await setupCamera(); if (!video.srcObject) return;
 
 video.play();
 
-const model = await tf.loadGraphModel('https://tfhub.dev/google/tfjs-model/movenet/singlepose/lightning/4', { fromTFHub: true });
-console.log('PoseNet Model loaded.');
+const model = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet);
+console.log('MoveNet Model loaded.');
 
 setInterval(() => detectPose(model), 100);
 
