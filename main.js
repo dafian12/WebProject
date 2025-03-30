@@ -5,16 +5,25 @@ const cameraSelect = document.getElementById('cameraSelect');
 
 async function setupCamera(deviceId = null) {
     const constraints = {
-        video: deviceId ? { deviceId: { exact: deviceId } } : true
+        video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: "user", // Ganti dengan "environment" untuk kamera belakang
+            deviceId: deviceId ? { exact: deviceId } : undefined
+        }
     };
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = stream;
-    return new Promise(resolve => {
-        video.onloadedmetadata = () => {
-            resolve(video);
-        };
-    });
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        return new Promise(resolve => {
+            video.onloadedmetadata = () => {
+                resolve(video);
+            };
+        });
+    } catch (error) {
+        console.error("Error accessing camera:", error);
+    }
 }
 
 async function getCameras() {
