@@ -1,17 +1,23 @@
 const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('output');
 const canvasCtx = canvasElement.getContext('2d');
+const statusDiv = document.getElementById('status');
 
 let lastX, lastY;
 let isDrawing = false;
 
 async function setupCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    videoElement.srcObject = stream;
-    await new Promise(resolve => {
-        videoElement.onloadedmetadata = () => resolve();
-    });
-    videoElement.play();
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoElement.srcObject = stream;
+        await new Promise(resolve => {
+            videoElement.onloadedmetadata = () => resolve();
+        });
+        videoElement.play();
+        statusDiv.textContent = "Kamera berhasil terhubung, mendeteksi tangan...";
+    } catch (error) {
+        statusDiv.textContent = "Gagal mengakses kamera: " + error.message;
+    }
 }
 
 setupCamera();
@@ -33,11 +39,12 @@ hands.onResults(results => {
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const landmarks = results.multiHandLandmarks[0];
-        
-        // Titik indeks jari telunjuk (landmark ke-8)
-        const indexFinger = landmarks[8];
+        const indexFinger = landmarks[8]; // Titik ujung jari telunjuk
+
         const x = indexFinger.x * canvasElement.width;
         const y = indexFinger.y * canvasElement.height;
+
+        statusDiv.textContent = "Tangan terdeteksi! Menggambar...";
 
         if (isDrawing && lastX != null && lastY != null) {
             canvasCtx.beginPath();
@@ -52,6 +59,7 @@ hands.onResults(results => {
         lastY = y;
         isDrawing = true;
     } else {
+        statusDiv.textContent = "Tidak ada tangan terdeteksi. Arahkan tanganmu ke kamera.";
         isDrawing = false;
         lastX = null;
         lastY = null;
