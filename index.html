@@ -3,68 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Offline (Vercel)</title>
+    <title>Web Chat Offline</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <h2>Chat Offline</h2>
+            <h2>Web Chat Offline</h2>
         </div>
-        <div class="chat-body" id="chat-body"></div>
+        <div class="chat-body" id="chat-body">
+            <!-- isi chat akan ditampilkan disini -->
+        </div>
         <div class="chat-footer">
             <input type="text" id="chat-input" placeholder="Tulis pesan...">
             <button id="send-btn">Kirim</button>
         </div>
     </div>
 
-    <script>
-        const chatBody = document.getElementById('chat-body');
-        const chatInput = document.getElementById('chat-input');
-        const sendBtn = document.getElementById('send-btn');
-
-        let username = prompt("Masukkan nama pengguna:") || "Pengguna";
-
-        async function fetchMessages() {
-            const response = await fetch('/api/messages');
-            const messages = await response.json();
-
-            chatBody.innerHTML = '';
-            messages.forEach(message => {
-                const chatMessage = document.createElement('div');
-                chatMessage.classList.add('chat-message');
-                chatMessage.innerHTML = `<strong>${message.username}:</strong> ${message.content} <small style="font-size: 10px;">(${message.time})</small>`;
-                chatBody.appendChild(chatMessage);
-            });
-            chatBody.scrollTop = chatBody.scrollHeight;
-        }
-
-        async function sendMessage() {
-            const messageContent = chatInput.value.trim();
-            if (!messageContent) return;
-
-            const message = {
-                username,
-                content: messageContent,
-                time: new Date().toLocaleTimeString()
-            };
-
-            await fetch('/api/messages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(message)
-            });
-
-            chatInput.value = '';
-            fetchMessages();
-        }
-
-        sendBtn.addEventListener('click', sendMessage);
-
-        // Refresh chat tiap 2 detik untuk mensimulasikan real-time chat
-        setInterval(fetchMessages, 2000);
-        
-        fetchMessages();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
