@@ -1,73 +1,34 @@
-const scanButton = document.getElementById('scanButton');
-const clearButton = document.getElementById('clearButton');
-const devicesList = document.getElementById('devicesList');
-const autoRefresh = document.getElementById('autoRefresh');
-const darkMode = document.getElementById('darkMode');
-const loadingIndicator = document.getElementById('loading');
-const searchBox = document.getElementById('searchBox');
+let chatBody = document.getElementById('chat-body');
+let chatInput = document.getElementById('chat-input');
+let sendBtn = document.getElementById('send-btn');
 
-let devices = new Map();
-let autoRefreshInterval;
+// array untuk menyimpan chat
+let chats = [];
 
-scanButton.addEventListener('click', scanDevices);
-
-clearButton.addEventListener('click', () => {
-  devices.clear();
-  renderDeviceList();
-});
-
-darkMode.addEventListener('change', () => {
-  document.body.classList.toggle('dark', darkMode.checked);
-  renderDeviceList();
-});
-
-autoRefresh.addEventListener('change', () => {
-  if (autoRefresh.checked) {
-    autoRefreshInterval = setInterval(scanDevices, 10000);
-  } else {
-    clearInterval(autoRefreshInterval);
-  }
-});
-
-searchBox.addEventListener('input', renderDeviceList);
-
-async function scanDevices() {
-  loadingIndicator.style.display = 'block';
-  try {
-    const device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true
-    });
-    const currentTime = new Date().toLocaleTimeString();
-    devices.set(device.id, { name: device.name || 'Unknown', time: currentTime });
-    renderDeviceList();
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
-  loadingIndicator.style.display = 'none';
-}
-
-function renderDeviceList() {
-  devicesList.innerHTML = '';
-  const searchTerm = searchBox.value.toLowerCase();
-
-  devices.forEach((device, id) => {
-    if (device.name.toLowerCase().includes(searchTerm)) {
-      const listItem = document.createElement('li');
-      listItem.className = darkMode.checked ? 'dark' : '';
-      listItem.innerHTML = `
-        <div>
-          <strong>Name:</strong> ${device.name} <br>
-          <strong>ID:</strong> ${id} <br>
-          <strong>Detected at:</strong> ${device.time}
-        </div>
-        <button onclick="removeDevice('${id}')">Remove</button>
-      `;
-      devicesList.appendChild(listItem);
+// fungsi untuk menampilkan chat
+function displayChat() {
+    chatBody.innerHTML = '';
+    for (let i = 0; i < chats.length; i++) {
+        let chatMessage = document.createElement('div');
+        chatMessage.classList.add('chat-message');
+        chatMessage.innerHTML = `
+            <span class="username">${chats[i].username}</span>
+            <span class="message-text">${chats[i].message}</span>
+        `;
+        chatBody.appendChild(chatMessage);
     }
-  });
 }
 
-function removeDevice(id) {
-  devices.delete(id);
-  renderDeviceList();
+// fungsi untuk mengirim chat
+function sendChat() {
+    let username = 'Anda'; // ganti dengan username yang diinginkan
+    let message = chatInput.value;
+    chats.push({ username, message });
+    chatInput.value = '';
+    displayChat();
 }
+
+sendBtn.addEventListener('click', sendChat);
+
+// menampilkan chat saat pertama kali halaman dibuka
+displayChat();
