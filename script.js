@@ -11,22 +11,14 @@ const poses = await model.estimatePoses(video, {
 });
 
 poses.forEach(pose => {
-    pose.keypoints.forEach(keypoint => {
-        if (keypoint.score > 0.5) {
-            context.beginPath();
-            context.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
-            context.fillStyle = 'lime';
-            context.fill();
-        }
-    });
-
     const skeleton = [
-        [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
-        [0, 5], [5, 6], [6, 7], [7, 8], // Index Finger
-        [0, 9], [9, 10], [10, 11], [11, 12], // Middle Finger
-        [0, 13], [13, 14], [14, 15], [15, 16], // Ring Finger
-        [0, 17], [17, 18], [18, 19], [19, 20], // Pinky Finger
-        [5, 6], [6, 8], [9, 10], [10, 12], [13, 14], [14, 16], [17, 18], [18, 20]
+        [0, 1], [1, 2], [2, 3], [3, 4],       // Thumb
+        [0, 5], [5, 6], [6, 7], [7, 8],       // Index Finger
+        [0, 9], [9, 10], [10, 11], [11, 12],  // Middle Finger
+        [0, 13], [13, 14], [14, 15], [15, 16],// Ring Finger
+        [0, 17], [17, 18], [18, 19], [19, 20],// Pinky Finger
+        [5, 6], [6, 8], [9, 10], [10, 12], [13, 14], [14, 16], [17, 18], [18, 20],
+        [5, 11], [6, 12], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16]
     ];
 
     context.strokeStyle = 'lime';
@@ -36,7 +28,7 @@ poses.forEach(pose => {
         const kp1 = pose.keypoints[i];
         const kp2 = pose.keypoints[j];
 
-        if (kp1.score > 0.5 && kp2.score > 0.5) {
+        if (kp1 && kp2 && kp1.score > 0.5 && kp2.score > 0.5) {
             context.beginPath();
             context.moveTo(kp1.x, kp1.y);
             context.lineTo(kp2.x, kp2.y);
