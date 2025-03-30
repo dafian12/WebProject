@@ -1,29 +1,25 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Waktu Sholat</title>
-    <link href="./style.css" rel="stylesheet">
+    <title>Chat Offline</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Aplikasi Waktu Sholat</h1>
-        <div>
-            <p>Waktu Saat Ini: <span id="current-time">Memuat...</span></p>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Chat Offline</h2>
         </div>
-        <div>
-            <p>Lokasi Anda: <span id="location">Mengambil lokasi...</span></p>
+        <div class="chat-body" id="chat-body">
+            <!-- isi chat akan ditampilkan disini -->
         </div>
-        <div class="time-container">
-            <p><img src="https://img.icons8.com/emoji/48/000000/sunrise-over-mountains.png" class="time-icon"/>Waktu Subuh: <span id="fajr-time">Mengambil...</span></p>
-            <p><img src="https://img.icons8.com/emoji/48/000000/sun.png" class="time-icon"/>Waktu Dzuhur: <span id="dhuhr-time">Mengambil...</span></p>
-            <p><img src="https://img.icons8.com/emoji/48/000000/sunset.png" class="time-icon"/>Waktu Ashar: <span id="asr-time">Mengambil...</span></p>
-            <p><img src="https://img.icons8.com/emoji/48/000000/crescent-moon.png" class="time-icon"/>Waktu Maghrib: <span id="maghrib-time">Mengambil...</span></p>
-            <p><img src="https://img.icons8.com/emoji/48/000000/full-moon.png" class="time-icon"/>Waktu Isya: <span id="isha-time">Mengambil...</span></p>
+        <div class="chat-footer">
+            <input type="text" id="chat-input" placeholder="Tulis pesan...">
+            <button id="send-btn">Kirim</button>
         </div>
     </div>
 
-    <script src="./script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
