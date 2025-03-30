@@ -1,20 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Fire ID Checker</title>
+    <title>Minecraft Server Stress Test</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Free Fire ID Checker</h1>
-        <form id="checkerForm">
-            <input type="text" id="playerID" placeholder="Masukkan ID Free Fire" required>
-            <button type="submit">Cek Nama</button>
-        </form>
-        <div id="result"></div>
+        <div class="card">
+            <h1>Minecraft Server Stress Test</h1>
+            <div class="input-group">
+                <label>Server Address:</label>
+                <input id="serverAddress" type="text" placeholder="Enter server address">
+            </div>
+            <div class="input-group">
+                <label>Server Port:</label>
+                <input id="serverPort" type="number" placeholder="Enter server port">
+            </div>
+            <div class="buttons">
+                <button id="startBtn">Start Test</button>
+                <button id="stopBtn">Stop Test</button>
+            </div>
+            <div class="logs">
+                <h2>Logs:</h2>
+                <div id="logs"></div>
+            </div>
+        </div>
     </div>
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
