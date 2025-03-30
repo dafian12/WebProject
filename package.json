@@ -1,0 +1,4 @@
+{
+  "playerID": "ID Free Fire",
+  "apiKey": "https://api.freefire.com/v1/player/$"
+}
