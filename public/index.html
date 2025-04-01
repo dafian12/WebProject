@@ -9,12 +9,12 @@
         <h2>Kirim OTP WhatsApp</h2>
         <form id="otpForm">
             <div class="input-group">
-                <label for="nomor_hp">Nomor HP (Format Internasional)</label>
+                <label for="nomor_hp">Nomor HP (Format Internasional tanpa +)</label>
                 <input type="text" id="nomor_hp" required>
             </div>
             <button type="submit">Kirim OTP</button>
         </form>
-        <p id="result"></p>
+        <div id="result"></div>
     </div>
 
     <script>
@@ -30,8 +30,15 @@
                 body: JSON.stringify({ nomor_hp: nomorHp })
             });
 
-            const result = await response.text();
-            document.getElementById("result").textContent = result;
+            const result = await response.json();
+            
+            if (result.link) {
+                document.getElementById("result").innerHTML = `
+                    <a href="${result.link}" target="_blank">Klik di sini untuk mengirim OTP via WhatsApp</a>
+                `;
+            } else {
+                document.getElementById("result").textContent = "Terjadi kesalahan, coba lagi.";
+            }
         });
     </script>
 </body>
