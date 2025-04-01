@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kirim OTP WhatsApp</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Kirim OTP WhatsApp</h2>
+        <form id="otpForm">
+            <div class="input-group">
+                <label for="nomor_hp">Nomor HP (Format Internasional)</label>
+                <input type="text" id="nomor_hp" required>
+            </div>
+            <button type="submit">Kirim OTP</button>
+        </form>
+        <p id="result"></p>
+    </div>
+
+    <script>
+        document.getElementById("otpForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const nomorHp = document.getElementById("nomor_hp").value;
+
+            const response = await fetch("/api/send-otp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ nomor_hp: nomorHp })
+            });
+
+            const result = await response.text();
+            document.getElementById("result").textContent = result;
+        });
+    </script>
+</body>
+</html>
