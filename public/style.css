@@ -49,3 +49,8 @@ button {
 button:hover {
     background-color: #0056b3;
 }
+
+#result {
+    margin-top: 15px;
+    text-align: center;
+}
