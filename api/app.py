@@ -28,5 +28,6 @@ def index():
 
     return render_template('index.html')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Untuk deployment di Vercel
+def handler(event, context):
+    return app(event, context)
