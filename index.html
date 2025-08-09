@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NGL Spammer GP</title>
+<style>
+  :root{--pink:#ff006e;--purple:#8338ec}
+  *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto}
+  body{margin:0;background:#111;color:#fafafa;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+  .card{background:#1a1a1a;padding:1.2rem;border-radius:12px;width:100%;max-width:300px}
+  h1{font-size:1.2rem;text-align:center;margin:0 0 1rem;color:var(--pink)}
+  label{font-size:.8rem;margin-bottom:.2rem;display:block}
+  input,textarea{width:100%;padding:.5rem;border:1px solid #333;border-radius:8px;background:#222;color:#fafafa;font-size:.9rem;resize:none}
+  button{width:100%;padding:.65rem;border:none;border-radius:999px;background:linear-gradient(90deg,var(--pink),var(--purple));color:#fff;font-weight:bold;margin-top:.4rem}
+  button:disabled{opacity:.5}
+  .status{margin-top:.6rem;font-size:.8rem;text-align:center;opacity:0;transition:opacity .4s}
+  .status.show{opacity:1}
+  .success{color:#0f0}
+  .failed{color:#ff3b30}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="card" id="loginCard">
+  <h1>Login</h1>
+  <label>Username</label>
+  <input id="userInp" placeholder="admin"/>
+  <label>Password</label>
+  <input id="passInp" type="password" placeholder="••••"/>
+  <button onclick="login()">Masuk</button>
+</div>
+
+<!-- MAIN -->
+<div class="card" id="mainCard" style="display:none">
+  <h1>Spam NGL</h1>
+
+  <label>Link NGL</label>
+  <input id="link" placeholder="https://ngl.link/target"/>
+
+  <label>Pesan</label>
+  <textarea id="msg" rows="3" placeholder="Tulis pesan..."></textarea>
+
+  <label>Jumlah</label>
+  <input id="count" type="number" min="1" max="5" value="1"/>
+
+  <button id="btnKirim" onclick="startSpam()">Kirim</button>
+
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+  // LOGIN
+  function login(){
+    const u=document.getElementById('userInp').value.trim();
+    const p=document.getElementById('passInp').value.trim();
+    if(u==='admin' && p==='spam'){
+      document.getElementById('loginCard').style.display='none';
+      document.getElementById('mainCard').style.display='block';
+    }else{
+      alert('Salah');
+    }
+  }
+
+  // CORS-proxy
+  const proxy='https://api.allorigins.win/raw?url=';
+
+  async function startSpam(){
+    const link=document.getElementById('link').value.trim();
+    const msg=document.getElementById('msg').value.trim();
+    const cnt=parseInt(document.getElementById('count').value);
+    const st=document.getElementById('status');
+    const btn=document.getElementById('btnKirim');
+    if(!link||!msg){alert('Isi link & pesan');return}
+    if(cnt<1||cnt>5){alert('Max 5');return}
+
+    btn.disabled=true;
+    st.textContent=''; st.className='status';
+
+    const username=new URL(link).pathname.split('/').pop();
+
+    // ambil token via proxy
+    let deviceId='',csrf='';
+    try{
+      const html=await fetch(proxy+encodeURIComponent(`https://ngl.link/${username}`)).then(r=>r.text());
+      deviceId=html.match(/"deviceId":"([^"]+)"/)?.[1]||'';
+      csrf=html.match(/"csrfToken":"([^"]+)"/)?.[1]||'';
+      if(!deviceId||!csrf){throw new Error('token not found')}
+    }catch(e){
+      showStatus('❌ gagal token','failed'); btn.disabled=false; return
+    }
+
+    let ok=0,fail=0;
+    for(let i=1;i<=cnt;i++){
+      try{
+        const res=await fetch(proxy+encodeURIComponent('https://ngl.link/api/submit'),{
+          method:'POST',
+          headers:{'Content-Type':'application/json','X-Csrf-Token':csrf},
+          body:JSON.stringify({username,question:msg,deviceId})
+        });
+        const data=JSON.parse(await res.text());
+        data.success?ok++:fail++;
+      }catch(e){
+        fail++;
+      }
+      await new Promise(r=>setTimeout(r,1500));
+    }
+    const txt=fail===0?`✅ ${ok} sukses`:`❌ ${fail} gagal`;
+    const cls=fail===0?'success':'failed';
+    showStatus(txt,cls);
+    btn.disabled=false;
+  }
+
+  function showStatus(text,cls){
+    const st=document.getElementById('status');
+    st.textContent=text;
+    st.className='status '+cls+' show';
+  }
+</script>
+</body>
+</html>
