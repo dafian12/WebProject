@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>SVRIOT • SQLi Scanner</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/iconfont/lucide.min.css" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0d0d0d;
+      --bg-card:#1a1a1a;
+      --accent:#00f5d4;
+      --text:#ffffff;
+      --text-sec:#a1a1aa;
+    }
+    [data-theme="light"]{
+      --bg:#fafafa;
+      --bg-card:#ffffff;
+      --accent:#0077ff;
+      --text:#111;
+      --text-sec:#555;
+    }
+    *{box-sizing:border-box;font-family:Inter,sans-serif;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+    .glass{
+      background:rgba(255,255,255,.05);
+      backdrop-filter:blur(12px);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      padding:3rem 2.5rem;
+      max-width:420px;
+      width:100%;
+      text-align:center;
+      box-shadow:0 25px 50px -12px rgba(0,0,0,.4);
+    }
+    .logo{font-size:1.75rem;font-weight:600;margin-bottom:.75rem;color:var(--accent)}
+    input{
+      width:100%;padding:.9rem 1rem;border-radius:12px;border:none;
+      background:var(--bg-card);color:var(--text);margin-bottom:1rem;font-size:.95rem;
+    }
+    button{
+      width:100%;padding:.9rem;border-radius:12px;border:none;
+      background:var(--accent);color:#000;font-weight:600;cursor:pointer;
+      transition:transform .2s;
+    }
+    button:hover{transform:translateY(-2px)}
+    .result{margin-top:1.5rem;font-size:.9rem;text-align:left}
+    .card{
+      background:var(--bg-card);
+      border-radius:12px;
+      padding:1rem 1.25rem;
+      display:none;
+    }
+    .vuln{border-left:4px solid #ff4d4d}
+    .safe{border-left:4px solid #00f5d4}
+    .error{border-left:4px solid #ffa600}
+    .loading .card{display:block;position:relative;overflow:hidden}
+    .loading .card::after{
+      content:"";position:absolute;top:0;left:-150%;
+      width:150%;height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+      animation:shimmer 1.2s infinite;
+    }
+    @keyframes shimmer{to{left:150%}}
+    .theme-toggle{
+      position:absolute;top:1rem;right:1rem;
+      background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;
+    }
+    .toast{
+      position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100%);
+      background:var(--accent);color:#000;padding:.75rem 1.5rem;border-radius:8px;font-size:.9rem;
+      transition:transform .3s;
+    }
+    .toast.show{transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="toggleTheme"><i data-lucide="sun"></i></button>
+
+  <div class="glass">
+    <div class="logo">SVRIOT</div>
+    <p style="margin-bottom:1.5rem;color:var(--text-sec);font-size:.9rem">
+      Advanced SQL-Injection Scanner
+    </p>
+
+    <input id="url" type="url" placeholder="https://target.com/page?id=1">
+    <button id="scanBtn">Scan</button>
+
+    <div class="result">
+      <div id="loading" class="loading card" style="display:none;">
+        <div style="height:1rem;background:rgba(255,255,255,.1);border-radius:4px"></div>
+      </div>
+      <div id="resultCard" class="card"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+
+    // Dark / light toggle
+    const toggleBtn = document.getElementById('toggleTheme');
+    const html = document.documentElement;
+    const saved = localStorage.getItem('theme');
+    if (saved) html.setAttribute('data-theme', saved);
+
+    toggleBtn.onclick = () => {
+      const current = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', current);
+      localStorage.setItem('theme', current);
+      lucide.createIcons();
+    }
+
+    // Toast
+    const toast = (msg) => {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 3000);
+    }
+
+    // Scan
+    const urlEl = document.getElementById('url');
+    const btn = document.getElementById('scanBtn');
+    const loading = document.getElementById('loading');
+    const resultCard = document.getElementById('resultCard');
+
+    btn.onclick = async () => {
+      const url = urlEl.value.trim();
+      if (!url) return toast('URL masih kosong');
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+      resultCard.style.display = 'none';
+
+      try {
+        const res = await fetch(`/api/scan?url=${encodeURIComponent(url)}`);
+        const data = await res.json();
+        loading.style.display = 'none';
+        resultCard.style.display = 'block';
+        resultCard.className = 'card ' + data.status;
+        resultCard.innerHTML = `
+          <div style="font-weight:600;margin-bottom:.25rem">${data.status.toUpperCase()}</div>
+          <div style="color:var(--text-sec);word-break:break-word">${data.detail}</div>
+        `;
+        toast('Scan selesai');
+      } catch (e) {
+        loading.style.display = 'none';
+        toast('Gagal terhubung');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
