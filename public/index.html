@@ -16,9 +16,18 @@
         const App = () => {
             const [target, setTarget] = React.useState('');
             const [reason, setReason] = React.useState('');
-            const [log, setLog] = React.useState([]);
+            const [status, setStatus] = React.useState([]);
+            const [isProcessing, setIsProcessing] = React.useState(false);
 
             const handleSubmit = () => {
+                if (!target || !reason) {
+                    setStatus([...status, { type: 'error', text: 'Isi semua kolom!' }]);
+                    return;
+                }
+
+                setIsProcessing(true);
+                setStatus([...status, { type: 'info', text: 'Mengirim laporan...' }]);
+
                 // Kirim data ke bot
                 Telegram.WebApp.sendData(JSON.stringify({
                     action: 'generate_report',
@@ -26,7 +35,8 @@
                     reason
                 }));
 
-                setLog([...log, `Mengirim laporan untuk: ${target}`]);
+                setStatus([...status, { type: 'success', text: 'Laporan dikirim!' }]);
+                setIsProcessing(false);
             };
 
             return (
@@ -56,14 +66,17 @@
 
                     <button 
                         onClick={handleSubmit}
-                        className="bg-green-600 hover:bg-green-700 text-white py-2 rounded mt-auto"
+                        disabled={isProcessing}
+                        className={`w-full py-2 rounded mt-auto ${isProcessing ? 'bg-yellow-600' : 'bg-green-600 hover:bg-green-700'}`}
                     >
-                        Mulai Report
+                        {isProcessing ? 'Memproses...' : 'Mulai Report'}
                     </button>
 
                     <div className="mt-4 text-xs text-gray-500 overflow-y-auto flex-grow">
-                        {log.map((entry, idx) => (
-                            <div key={idx}>{entry}</div>
+                        {status.map((item, idx) => (
+                            <div key={idx} className={item.type === 'error' ? 'text-red-500' : item.type === 'success' ? 'text-green-500' : ''}>
+                                {item.text}
+                            </div>
                         ))}
                     </div>
                 </div>
