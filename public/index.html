@@ -26,16 +26,16 @@
                 }
 
                 setIsProcessing(true);
-                setStatus([...status, { type: 'info', text: 'Mengirim laporan...' }]);
+                setStatus([...status, { type: 'info', text: 'Mengirim laporan ke semua akun...' }]);
 
                 // Kirim data ke bot
                 Telegram.WebApp.sendData(JSON.stringify({
-                    action: 'generate_report',
+                    action: 'mass_report',
                     target,
                     reason
                 }));
 
-                setStatus([...status, { type: 'success', text: 'Laporan dikirim!' }]);
+                setStatus([...status, { type: 'success', text: 'Laporan dikirim ke semua akun target!' }]);
                 setIsProcessing(false);
             };
 
@@ -44,10 +44,10 @@
                     <h1 className="text-red-500 text-xl font-bold mb-4">Telegram Report BOT</h1>
                     
                     <div className="mb-4">
-                        <label className="block text-cyan-400 mb-1">Target</label>
+                        <label className="block text-cyan-400 mb-1">Target (Daftar akun dipisah koma)</label>
                         <input 
                             type="text" 
-                            placeholder="Masukkan @username, link group, atau channel"
+                            placeholder="contoh: @admin1,@admin2"
                             value={target}
                             onChange={(e) => setTarget(e.target.value)}
                             className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"
@@ -69,7 +69,7 @@
                         disabled={isProcessing}
                         className={`w-full py-2 rounded mt-auto ${isProcessing ? 'bg-yellow-600' : 'bg-green-600 hover:bg-green-700'}`}
                     >
-                        {isProcessing ? 'Memproses...' : 'Mulai Report'}
+                        {isProcessing ? 'Memproses...' : 'Kirim Report ke Semua Akun'}
                     </button>
 
                     <div className="mt-4 text-xs text-gray-500 overflow-y-auto flex-grow">
