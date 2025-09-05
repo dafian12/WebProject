@@ -1,0 +1,25 @@
+<!-- callback.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TikTok OAuth Callback</title>
+</head>
+<body>
+    <h1>Callback Handler</h1>
+    <p>Authorization code: <span id="code"></span></p>
+    
+    <script>
+        // Ambil kode dari URL fragment (#)
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const code = params.get('code');
+        
+        if (code) {
+            document.getElementById('code').textContent = code;
+            console.log('Authorization Code:', code);
+        } else {
+            document.getElementById('code').textContent = 'No code found';
+        }
+    </script>
+</body>
+</html>
