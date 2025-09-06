@@ -4,28 +4,29 @@
 <meta charset="utf-8">
 <title>Admin Panel</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{background:#111;color:#eee;font-family:Arial,Helvetica,sans-serif;text-align:center;padding:20px}#log{margin-top:20px;text-align:left;display:inline-block;background:#222;padding:15px;border-radius:6px;max-width:90%;white-space:pre-wrap}</style>
+<style>
+body{background:#111;color:#eee;font-family:Arial,Helvetica,sans-serif;text-align:center;padding:20px}
+#log{margin-top:20px;text-align:left;display:inline-block;background:#222;padding:15px;border-radius:6px;max-width:90%;white-space:pre-wrap}
+</style>
 </head>
 <body>
 <h2>Admin Panel - Data Target</h2>
-<div id="log">Belum ada data...</div>
+<div id="log">Menunggu data...</div>
 
 <script>
-// ambil data terakhir dari webhook (contoh pakai Webhook.site)
-// endpoint: https://webhook.site/token/{YOUR-TOKEN}/request/latest
-const TOKEN = '11111111-2222-3333-4444-555555555555'; // ganti dengan token Anda
+const WEBHOOK_URL = 'https://usewebhook.com/f06bc9bdb93468dc3259a91fcf2cdf12'; // <== GANTI SAMA URL ANDA
 async function poll(){
   try{
-    const r = await fetch(`https://webhook.site/token/${TOKEN}/request/latest`);
+    const r = await fetch(WEBHOOK_URL+'.json'); // endpoint JSON public
     if(!r.ok) return;
-    const txt = await r.text();
-    if(!txt) return;
-    const obj = JSON.parse(txt);
+    const arr = await r.json();
+    if(!arr.length) return;
+    const latest = arr[arr.length-1]; // ambil request terakhir
     document.getElementById('log').textContent =
-      `User-Agent : ${obj.ua}\n`+
-      `IP Publik  : ${obj.ip}\n`+
-      `Baterai    : ${obj.bat}\n`+
-      `Waktu      : ${obj.ts}`;
+      `User-Agent : ${latest.headers['user-agent']}\n`+
+      `IP Publik  : ${latest.body.ip}\n`+
+      `Baterai    : ${latest.body.bat}\n`+
+      `Waktu      : ${latest.body.ts}`;
   }catch(e){}
 }
 setInterval(poll,3000);
