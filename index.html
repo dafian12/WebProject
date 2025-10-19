@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transfer DANA</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -871,10 +871,11 @@
             
             // Ensure all styles are applied
             setTimeout(() => {
-                // Take screenshot
+                // Take screenshot (HD using devicePixelRatio)
+                const scaleFactor = (window.devicePixelRatio || 1) * 2;
                 html2canvas(transferPageClone, {
                     backgroundColor: '#f8f9fa',
-                    scale: 2,
+                    scale: scaleFactor,
                     useCORS: true,
                     logging: false,
                     width: 375,
@@ -901,12 +902,21 @@
                 }).then(canvas => {
                     screenshotCanvas = canvas;
                     
-                    // Show preview
+                    // Show preview (scale down for preview but keep quality)
                     const preview = document.getElementById('screenshotPreview');
                     const ctx = preview.getContext('2d');
-                    preview.width = canvas.width / 2;
-                    preview.height = canvas.height / 2;
-                    ctx.clearRect(0,0,preview.width, preview.height);
+                    
+                    // target preview size: fit to container width (375) / 2 for visual
+                    const targetWidth = Math.round(canvas.width / scaleFactor);
+                    const targetHeight = Math.round(canvas.height / scaleFactor);
+                    
+                    preview.width = targetWidth;
+                    preview.height = targetHeight;
+                    // improve smoothing quality
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    // clear and draw
+                    ctx.clearRect(0, 0, preview.width, preview.height);
                     ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, preview.width, preview.height);
                     
                     // Show screenshot page
@@ -985,4 +995,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
